@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Res } from '@nestjs/common';
 import { AppService } from './app.service';
 import { Registry, Client } from 'azure-iothub';
 
@@ -7,7 +7,7 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
-  getHello(): string {
+  getHello(@Res() res) {
     const connectionString = `HostName=CS3237-IOTHub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=Jxwq/Ejdwlkx3nZXEd9lQdTrXIl7R3ldnAIoTNYJNjM=`;
     const deviceId = 'ESP32-KH';
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -33,6 +33,6 @@ export class AppController {
         console.log('Message sent successfully.');
       }
     });
-    return this.appService.getHello();
+    res.json(this.appService.getHello());
   }
 }

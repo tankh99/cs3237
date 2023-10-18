@@ -8,8 +8,8 @@ export class AppController {
 
   @Get()
   getHello(@Res() res) {
-    const connectionString = `HostName=CS3237-IOTHub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=Jxwq/Ejdwlkx3nZXEd9lQdTrXIl7R3ldnAIoTNYJNjM=`;
-    const deviceId = 'ESP32-KH';
+    const connectionString = process.env.CONNECTION_STRING;
+    const deviceId = process.env.DEVICE_ID;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const registry = Registry.fromConnectionString(connectionString);
     const client = Client.fromConnectionString(connectionString);

@@ -1,6 +1,7 @@
 import { Controller, Get, Res } from '@nestjs/common';
 import { AppService } from './app.service';
 import { Registry, Client } from 'azure-iothub';
+import 'dotenv/config'
 
 @Controller()
 export class AppController {
@@ -8,8 +9,8 @@ export class AppController {
 
   @Get()
   getHello(@Res() res) {
-    const connectionString = `HostName=CS3237-IOTHub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=Jxwq/Ejdwlkx3nZXEd9lQdTrXIl7R3ldnAIoTNYJNjM=`;
-    const deviceId = 'ESP32-KH';
+    const connectionString = `HostName=${process.env.HOSTNAME};SharedAccessKeyName=iothubowner;SharedAccessKey=${process.env.PRIVATEKEY}`;
+    const deviceId = '${process.env.DEVICEID}';
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const registry = Registry.fromConnectionString(connectionString);
     const client = Client.fromConnectionString(connectionString);

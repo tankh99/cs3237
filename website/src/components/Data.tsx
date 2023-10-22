@@ -13,8 +13,8 @@ export default function Data() {
     } catch (err: any) {
       alert("Exception occurred " + err)
     }
-
   }
+  
   return (
     <div>
       <Button onClick={sendData}>Send message</Button>

@@ -27,9 +27,11 @@
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/platform-socket.io": "^10.2.7",
     "@nestjs/websockets": "^10.2.7",
+    "@vercel/postgres": "^0.5.0",
     "azure-iot-device-amqp": "^1.14.3",
     "azure-iot-device-mqtt": "^1.16.3",
     "azure-iothub": "^1.16.4",
+    "prisma": "^5.5.2",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
     "ws": "^8.14.2"

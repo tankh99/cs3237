@@ -41,11 +41,17 @@ export class IothubService implements OnModuleInit {
     // Prevent sending data if there are stilll messages within 10ms
     const DELAY = 2000; // Wait DELAY ms before sending data to the database. There's an issue where if you move this to class body, the function runs immmediately
     clearTimeout(this.timerId);
-    this.socketSerice.socket.emit('events', this.messages);
-    this.timerId = setTimeout(() => {
-      console.log('I am storing data into the database now', this.messages);
-      // server.emit('events', messages);
-    }, DELAY);
+
+    console.log('Sending', JSON.stringify(this.messages));
+    this.socketSerice.socket.emit(
+      process.env.EVENTS_CLIENT,
+      JSON.stringify(this.messages),
+    );
+    this.messages = [];
+    // this.timerId = setTimeout(() => {
+    //   console.log('I am storing data into the database now', this.messages);
+    //   // this.socketSerice.socket.emit('events', JSON.stringify(this.messages));
+    // }, DELAY);
   }
 
   async errorHandler(err: any) {

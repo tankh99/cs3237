@@ -8,6 +8,7 @@ async function bootstrap() {
     credentials: false,
     origin: ['http://localhost:3000'],
   });
+  // uncomment if you want to use ws instead of socket.io
   // app.useWebSocketAdapter(new WsAdapter(app));
   await app.listen(process.env.PORT || 4000);
 }

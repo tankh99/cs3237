@@ -25,7 +25,7 @@ export class EventsGateway
     this.socketService.socket = server;
   }
 
-  @SubscribeMessage('events')
+  @SubscribeMessage(process.env.EVENTS_SERVER)
   handleEvent(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: any,
@@ -34,12 +34,14 @@ export class EventsGateway
     // client.broadcast.emit(JSON.stringify(payload));
     // client.broadcast.emit(JSON.stringify(payload));
     // client.emit('events-output', JSON.stringify(payload));
-    client.emit('events', JSON.stringify(payload));
+    client.emit(process.env.EVENTS_CLIENT, JSON.stringify(payload));
   }
 
   handleConnection(client: Socket) {
-    console.log('Client connected');
-    this.wsClients.push(client);
+    if (!this.wsClients.includes(client.conn.remoteAddress)) {
+      console.log('Client connected', client.conn.remoteAddress);
+      this.wsClients.push(client.conn.remoteAddress);
+    }
     // You can handle client connections here.
   }
 

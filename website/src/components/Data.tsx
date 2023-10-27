@@ -2,11 +2,12 @@
 
 import React, { useEffect } from 'react'
 import { Button } from './ui/button'
-import useEvents, { IOTEvent } from '@/utils/hooks/useEvents';
-import { socket } from '@/utils/socket';
+import useEvents, { IOTEvent } from '@/lib/utils/hooks/useEvents';
+import { socket } from '@/lib/utils/socket';
+import { EVENTS_SERVER } from '@/lib/sockets';
 
 export default function Data() {
-  const [events] = useEvents();
+  const [events, loading] = useEvents();
   const sendData = async () => {
     try {
       const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000')
@@ -31,17 +32,19 @@ export default function Data() {
         z: Math.random()
       }
     }
-    socket!.emit("events", event);
+    socket.emit(EVENTS_SERVER, event);
   }
   
+  if (loading) return "Loading..."
   return (
     <div>
       <Button onClick={sendData}>Send message</Button>
       {/* <Button onClick={ping}>Ping</Button> */}
       <Button onClick={addEvent}>Add event</Button>
       {events && events.map((event, index) => {
+        const {x, y, z} = event.imu
         return (
-          <div key={index}>{index}</div>
+          <div key={index}>X: {x} Y: {y} Z: {z}</div>
         )
       })}
 

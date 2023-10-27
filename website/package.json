@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.0.2",
+    "@types/ws": "^8.5.8",
     "azure-iothub": "^1.16.4",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
@@ -17,18 +18,25 @@
     "next": "13.5.5",
     "react": "^18",
     "react-dom": "^18",
+    "socket.io-client": "^4.7.2",
     "tailwind-merge": "^1.14.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "ws": "^8.14.2"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10",
+    "bufferutil": "^4.0.8",
     "eslint": "^8",
     "eslint-config-next": "13.5.5",
     "postcss": "^8",
+    "socket.io": "^4.7.2",
     "tailwindcss": "^3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "utf-8-validate": "^5.0.10",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
   }
 }

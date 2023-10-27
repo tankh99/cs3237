@@ -4,54 +4,48 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
   WebSocketServer,
+  OnGatewayInit,
+  ConnectedSocket,
+  MessageBody,
 } from '@nestjs/websockets';
-import { WebSocket } from 'ws';
-import http from 'http';
+import { Server, Socket } from 'socket.io';
+import { SocketService } from 'src/socket/socket.service';
 
-@WebSocketGateway({ namespace: 'events' })
-export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+@WebSocketGateway({ cors: { origin: '*' } })
+export class EventsGateway
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
+  constructor(private socketService: SocketService) {}
+
   @WebSocketServer()
-  server;
+  public server: Server;
   wsClients = [];
 
-  @SubscribeMessage('message')
-  handleMessage(client: any, payload: any): string {
-    console.log(client, payload);
-    const data = 'Hello world';
-    this.broadcast(data);
-    return data;
+  afterInit(server: Server) {
+    this.socketService.socket = server;
   }
 
-  handleConnection(client: WebSocket) {
-    console.log('Client connected', client);
+  @SubscribeMessage('events')
+  handleEvent(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: any,
+  ): void {
+    console.log('Broadcasting payload', payload);
+    // client.broadcast.emit(JSON.stringify(payload));
+    // client.broadcast.emit(JSON.stringify(payload));
+    // client.emit('events-output', JSON.stringify(payload));
+    client.emit('events', JSON.stringify(payload));
+  }
+
+  handleConnection(client: Socket) {
+    console.log('Client connected');
     this.wsClients.push(client);
     // You can handle client connections here.
   }
 
-  handleDisconnect(client: WebSocket) {
-    console.log('Client disconnected', client);
+  handleDisconnect(client: Socket) {
+    console.log('Client disconnected');
     this.wsClients = this.wsClients.filter((c) => c != client);
     // You can handle client disconnections here.
-  }
-
-  broadcast(data: any) {
-    // const client1 = new WebSocket('http://localhost:4000');
-
-    const client1 = new WebSocket.Server({
-      server: http.createServer().listen(4001),
-    });
-    console.log(client1.readyState, WebSocket.OPEN);
-    this.wsClients.push(client1);
-    this.wsClients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        try {
-          console.log(`Broadcasting data ${data}`);
-          client.send(data);
-          client.emit('message', data);
-        } catch (e) {
-          console.error(e);
-        }
-      }
-    });
   }
 }

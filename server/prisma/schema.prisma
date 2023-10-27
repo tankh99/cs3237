@@ -8,6 +8,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_NON_POOLING") // uses a direct connection
 }
 
 model ActivityRecording {
@@ -16,12 +17,13 @@ model ActivityRecording {
   x Decimal
   y Decimal
   z Decimal
-  person_id Int @relation(fields: [person_id], references: [id])
+  person_id Int 
+  person Person @relation(fields: [person_id], references: [id])
   activity_type Int?
 }
 
 model Person {
   id Int @id @default(autoincrement())
 
-  @@relation recordings ActivityRecording[]
+  recordings ActivityRecording[]
 }

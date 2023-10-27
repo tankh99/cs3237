@@ -1,31 +1,26 @@
 import { Controller, Get, Res } from '@nestjs/common';
 import { EventsService } from './events.service';
+import { SocketService } from 'src/socket/socket.service';
+import { EventsGateway } from './events.gateway';
 
 @Controller('events')
 export class EventsController {
   connectionString: string;
-  constructor(private readonly eventsService: EventsService) {
-    eventsService.initClient();
-  }
+  constructor(
+    private readonly eventsService: EventsService,
+    private readonly eventsGateway: EventsGateway,
+    private socketService: SocketService,
+  ) {}
 
   @Get()
-  async subscribeToEvents() {
-    const iotHubConnectionString = process.env.CONNECTION_STRING;
-    if (!iotHubConnectionString) {
-      console.error(
-        `Environment variable IotHubConnectionString must be specified.`,
-      );
-      return;
-    }
-    console.log(`Using IoT Hub connection string [${iotHubConnectionString}]`);
+  async getEvents() {
+    return [];
+  }
 
-    const eventHubConsumerGroup = '';
-    console.log(eventHubConsumerGroup);
-    if (!eventHubConsumerGroup) {
-      console.error(
-        `Environment variable EventHubConsumerGroup must be specified.`,
-      );
-      return;
-    }
+  @Get('test')
+  async test() {
+    console.log('Testing');
+    // this.socketService.socket.emit('events', { name: 'FUCK' });
+    this.eventsGateway.server.emit('events', { name: 'FUCK' });
   }
 }

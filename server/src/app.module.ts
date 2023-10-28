@@ -6,17 +6,9 @@ import { ConfigModule } from '@nestjs/config';
 import { SocketService } from './socket/socket.service';
 import { SocketModule } from './socket/socket.module';
 import { IothubModule } from './iothub/iothub.module';
-import { UsersService } from './users/users.service';
-import { UsersModule } from './users/users.module';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot(),
-    SocketModule,
-    EventsModule,
-    IothubModule,
-    UsersModule,
-  ],
+  imports: [ConfigModule.forRoot(), SocketModule, EventsModule, IothubModule],
   controllers: [AppController],
   providers: [AppService],
 })

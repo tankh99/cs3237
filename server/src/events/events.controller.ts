@@ -1,4 +1,4 @@
-import { Controller, Get, Res } from '@nestjs/common';
+import { Body, Controller, Get, Post, Res } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { SocketService } from 'src/socket/socket.service';
 import { EventsGateway } from './events.gateway';
@@ -22,5 +22,11 @@ export class EventsController {
     console.log('Testing');
     // this.socketService.socket.emit('events', { name: 'FUCK' });
     this.eventsGateway.server.emit('events', { name: 'FUCK' });
+  }
+
+  @Post()
+  async createEvents(@Body() body) {
+    this.eventsService.createEvents(body);
+    return 'Dumbo';
   }
 }

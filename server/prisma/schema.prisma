@@ -17,13 +17,14 @@ model ActivityRecording {
   x Decimal
   y Decimal
   z Decimal
-  person_id Int 
-  person Person @relation(fields: [person_id], references: [id])
-  activity_type Int?
+  device_id String
+  user_id Int? 
+  user User? @relation(fields: [user_id], references: [id])
+  activity_type String?
 }
 
-model Person {
+model User {
   id Int @id @default(autoincrement())
-
+  name String
   recordings ActivityRecording[]
 }

@@ -4,21 +4,21 @@ import { useEffect, useState } from 'react';
 import { io, Socket } from "socket.io-client";
 import {socket} from '@/lib/utils/socket';
 import { EVENTS_CLIENT } from '@/lib/sockets';
+import { ActivityMetadata } from '@/components/ActivityForm';
 
-export type IOTEvent = {
-  imu: {
-    x: number;
-    y: number;
-    z: number;
-  }
+export type IMUActivityEventRecording = {
+  x: number;
+  y: number;
+  z: number;
+  timestamp: number;
+  activity_type?: string;
+  device_id?: string;
 }
 
 export default function useEvents() {
 
-  const [events, setEvents] = useState<IOTEvent[]>([]);
-  const [initialised, setInitialised] = useState(false);;
+  const [events, setEvents] = useState<IMUActivityEventRecording[]>([]);
   const [loading, setLoading] = useState(false)
-  const [timerId, setTimerId] = useState<any>(null)
   useEffect(() => {
     const fetchEvents = async () => {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/`);
@@ -40,11 +40,9 @@ export default function useEvents() {
         console.log("Disconnected")
         setLoading(false);
       })
-      // socket.on('events-output', (data) => {
-      //     console.log("Events output data", data)
-      //   })
+      
       socket.on(EVENTS_CLIENT, (data: string) => {
-        const events: IOTEvent[] = JSON.parse(data);
+        const events: IMUActivityEventRecording[] = JSON.parse(data);
         console.log("Events", events)
         setEvents((prev) => prev.concat(events));
       })
@@ -53,6 +51,28 @@ export default function useEvents() {
     // fetchEvents();
   }, [])
   
-  return [events, loading] as const
-  
+  const uploadEvents = async (values: ActivityMetadata) => {
+    for (let event of events) {
+      event.device_id = values.name; // Identify whose data it belongs to
+      event.activity_type = values.activityType;
+    }
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/events`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(events)
+      })
+      console.log("Uploaded", events)
+      setEvents([]);
+      alert(`Uploaded data as activity type ${values.activityType}`);
+      console.log(res);
+    } catch (ex) {
+      console.error(ex)
+    }
+  }
+
+  return [events, uploadEvents, loading]
 }

@@ -41,7 +41,7 @@ export default function IOTEvents() {
       device_id: "TEST DEVICE ID",
       timestamp: Date.now()
     }
-    socket.emit(EVENTS_SERVER, event);
+    socket.emit(EVENTS_SERVER, event); // EVENTS_SERVER is end pt, event is data
   }
   
   if (loading) return "Loading..."

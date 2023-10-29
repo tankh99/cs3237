@@ -1,2 +1,4 @@
 ./acutators/build/*
+devices/actuators/build/esp32.esp32.esp32doit-devkit-v1/actuators.ino.elf
+devices/actuators/build/esp32.esp32.esp32doit-devkit-v1/actuators.ino.map
 ./sendcloudtodevice/node_modules/*

@@ -1,0 +1,1 @@
+https://learn.microsoft.com/en-us/azure/event-hubs/event-hubs-node-get-started-send?tabs=connection-string%2Croles-azure-portal#send-events

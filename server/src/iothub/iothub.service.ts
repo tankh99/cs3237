@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 
-import { EventHubConsumerClient, ReceivedEventData } from '@azure/event-hubs';
+import { EventHubBufferedProducerClient, EventHubConsumerClient, EventHubProducerClient, ReceivedEventData } from '@azure/event-hubs';
 import { Server } from 'socket.io';
 import { SocketService } from 'src/socket/socket.service';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -24,6 +24,7 @@ export class IothubService implements OnModuleInit {
   connectionString = `Endpoint=${process.env.ENDPOINT};EntityPath=${process.env.ENTITY_PATH};SharedAccessKeyName=iothubowner;SharedAccessKey=${process.env.SHARED_ACCESS_KEY};HostName=${process.env.HOST_NAME}`;
   messages = [];
   messagesToStore = [];
+  producer: EventHubBufferedProducerClient;
   onModuleInit() {
     console.log('Initialising IOT Hub server');
     const client = new EventHubConsumerClient(
@@ -36,6 +37,30 @@ export class IothubService implements OnModuleInit {
       processError: this.errorHandler,
     });
     console.log('Susbcribed to IoTHub');
+
+    this.producer = new EventHubBufferedProducerClient(
+      this.connectionString,
+      process.env.ENTITY_PATH,
+      {
+        maxWaitTimeInMs: 1000, // Wait at most 1000ms before sending
+        maxEventBufferLengthPerPartition: 1000, // OR until 1000 messages have been enqueued
+        onSendEventsErrorHandler: (err) => {
+          console.error(err);
+        },
+      },
+    );
+
+  }
+
+  async sendMessage(message: string) {
+    try {
+      await this.producer.enqueueEvent({ body: message });
+      console.log('Sent message', message);
+      
+      return message;
+    } catch (ex) {
+      console.error(ex);
+    }
   }
 
   async messageHandler(events: ReceivedEventData[]) {
@@ -72,48 +97,10 @@ export class IothubService implements OnModuleInit {
       );
       this.messagesToStore = this.messagesToStore.concat(this.messages);
       this.messages = [];
-      // console.log(
-      //   'I am storing data into the database now',
-      //   this.messagesToStore,
-      // );
-      // // const pService = this.prismaService;
-      // const events = [];
-      // for (let i = 0; i < this.messagesToStore.length; i++) {
-      //   const message = this.messagesToStore[i].imu;
-      //   const event: IOTEvent = {
-      //     x: message.x,
-      //     y: message.y,
-      //     z: message.z,
-      //     timestamp: Date.now(),
-      //     person_id: 1,
-      //   };
-      //   events.push(event);
-      //   console.log(event);
-
-      //   // this.prismaService.activityRecording
-      //   //   .create({
-      //   //     data: event,
-      //   //   })
-      //   //   .then((created) => {
-      //   //     console.log(created);
-      //   //   })
-      //   //   .catch((err) => {
-      //   //     console.error(err);
-      //   //   });
-      // }
-      // this.prismaService.activityRecording
-      //   .createMany({
-      //     data: events,
-      //   })
-      //   .then((created) => {
-      //     console.log(created);
-      //     this.messagesToStore = this.messages;
-      //   })
-      //   .catch((err) => {
-      //     console.error(err);
-      //   });
     }, DELAY);
   }
+
+
 
   async errorHandler(err: any) {
     console.log('Hello error received');

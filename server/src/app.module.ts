@@ -8,7 +8,7 @@ import { SocketModule } from './socket/socket.module';
 import { IothubModule } from './iothub/iothub.module';
 
 @Module({
-  imports: [ConfigModule.forRoot(), SocketModule, EventsModule, IothubModule],
+  imports: [ConfigModule.forRoot(), SocketModule, IothubModule, EventsModule],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -6,6 +6,7 @@ import { SocketService } from 'src/socket/socket.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 export type IMUActivityEventRecording = {
+  key: string;
   x: number;
   y: number;
   z: number;
@@ -65,9 +66,9 @@ export class IothubService implements OnModuleInit {
 
   async messageHandler(events: ReceivedEventData[]) {
     for (const event of events) {
-      // console.log(event)
       const deviceId = event.systemProperties['iothub-connection-device-id'];
       let data: IMUActivityEventRecording = {
+        key: 'imu1',
         x: 0,
         y: 0,
         z: 0,
@@ -76,12 +77,17 @@ export class IothubService implements OnModuleInit {
         activity_type: '',
       };
       // Assume we receive JSOn only
-      data = {
-        ...data,
-        ...event.body,
-      };
-      this.messages.push(data);
-      console.log('Received', data);
+      const body = event.body;
+      if (typeof body === 'object') {
+        for (const coord of event.body.data) {
+          data = {
+            ...data,
+            ...coord,
+          };
+          this.messages.push(data);
+        }
+      }
+      console.log('Received', this.messages);
     }
     // Prevent sending data if there are stilll messages within 10ms
     const DELAY = 1000; // Wait DELAY ms before sending data to the database. There's an issue where if you move this to class body, the function runs immmediately

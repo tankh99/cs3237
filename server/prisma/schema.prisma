@@ -8,7 +8,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  directUrl = env("DATABASE_URL_NON_POOLING") // uses a direct connection
+  // directUrl = env("DATABASE_URL_NON_POOLING") // uses a direct connection
 }
 
 model ActivityRecording {
@@ -17,6 +17,7 @@ model ActivityRecording {
   x Decimal
   y Decimal
   z Decimal
+  key String?
   device_id String
   user_id Int? 
   user User? @relation(fields: [user_id], references: [id])

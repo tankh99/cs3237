@@ -1,12 +1,14 @@
 import random
+from classify_on_off import classify as classify_tremor
 
 def predict_tremor(data):
-    # model.predict(data)
-    pred = random.randint(0, 1)
-    if pred == 0:
-      return False
-    else:
-      return True
+    result = classify_tremor(data)
+    return result
+    # pred = random.randint(0, 1)
+    # if pred == 0:
+    #   return False
+    # else:
+    #   return True
 
 def predict_activity(data):
     # prediction = model.predict(data)

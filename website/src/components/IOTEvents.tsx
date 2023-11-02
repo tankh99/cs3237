@@ -7,6 +7,7 @@ import { socket } from '@/lib/utils/socket';
 import { EVENTS_SERVER } from '@/lib/sockets';
 import { Input } from './ui/input';
 import ActivityForm from './ActivityForm';
+import { Table, TableHead, TableHeader, TableCaption, TableRow, TableBody, TableCell } from './ui/table';
 
 export default function IOTEvents() {
   const [events, uploadEvents, loading] = useEvents();
@@ -49,14 +50,32 @@ export default function IOTEvents() {
     <div>
       {/* <Button onClick={sendData}>Send message</Button> */}
       {/* <Button onClick={ping}>Ping</Button> */}
-      <Button onClick={addEvent}>Add random event</Button>
+      {/* <Button onClick={addEvent}>Add random event</Button> */}
       <ActivityForm uploadEvents={uploadEvents} />
-      {events && events.map((event, index) => {
-        const {x, y, z} = event
-        return (
-          <div key={index}>X: {x} Y: {y} Z: {z}</div>
-        )
-      })}
+      <br/>
+      <Table >
+        <TableCaption>Received IMU data</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>X</TableHead>
+            <TableHead>Y</TableHead>
+            <TableHead>Z</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody className='h-[400px] overflow-scroll'>
+          
+          {events && events.map((event, index) => {
+            const {x, y, z} = event
+            return (
+              <TableRow key={index}>
+                <TableCell>{x}</TableCell>
+                <TableCell>{y}</TableCell>
+                <TableCell>{z}</TableCell>
+              </TableRow>
+              )
+            })}
+        </TableBody>
+      </Table>
 
     </div>
   )

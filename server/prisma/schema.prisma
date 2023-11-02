@@ -17,6 +17,7 @@ model ActivityRecording {
   x Decimal
   y Decimal
   z Decimal
+  name String?
   key String?
   device_id String
   user_id Int? 

@@ -1,9 +1,15 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 
-import { EventHubBufferedProducerClient, EventHubConsumerClient, EventHubProducerClient, ReceivedEventData } from '@azure/event-hubs';
+import {
+  EventHubBufferedProducerClient,
+  EventHubConsumerClient,
+  EventHubProducerClient,
+  ReceivedEventData,
+} from '@azure/event-hubs';
 import { Server } from 'socket.io';
 import { SocketService } from 'src/socket/socket.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import axios from 'axios';
 
 export type IMUActivityEventRecording = {
   key: string;
@@ -15,6 +21,13 @@ export type IMUActivityEventRecording = {
   activity_type: string;
 };
 
+export type ActivityClassification = {
+  timestamp: number;
+  name?: string;
+  device_id?: string;
+  activityType: string;
+  medicationStatus: boolean;
+};
 @Injectable()
 export class IothubService implements OnModuleInit {
   constructor(
@@ -50,14 +63,13 @@ export class IothubService implements OnModuleInit {
         },
       },
     );
-
   }
 
   async sendMessage(message: string) {
     try {
       await this.producer.enqueueEvent({ body: message });
       console.log('Sent message', message);
-      
+
       return message;
     } catch (ex) {
       console.error(ex);
@@ -67,6 +79,7 @@ export class IothubService implements OnModuleInit {
   async messageHandler(events: ReceivedEventData[]) {
     for (const event of events) {
       const deviceId = event.systemProperties['iothub-connection-device-id'];
+
       let data: IMUActivityEventRecording = {
         key: 'imu1',
         x: 0,
@@ -87,26 +100,50 @@ export class IothubService implements OnModuleInit {
           this.messages.push(data);
         }
       }
-      console.log('Received', this.messages);
     }
     // Prevent sending data if there are stilll messages within 10ms
-    const DELAY = 1000; // Wait DELAY ms before sending data to the database. There's an issue where if you move this to class body, the function runs immmediately
+    const DELAY = 3000; // Wait DELAY ms before sending data to the database. There's an issue where if you move this to class body, the function runs immmediately
     clearTimeout(this.timerId);
 
     // Wait for the user to label their data and set their name before receiving it on the server
-    this.timerId = setTimeout(() => {
-
+    this.timerId = setTimeout(async () => {
       console.log('Sending', JSON.stringify(this.messages));
-      this.socketSerice.socket.emit(
-        process.env.EVENTS_CLIENT,
-        JSON.stringify(this.messages),
-      );
-      this.messagesToStore = this.messagesToStore.concat(this.messages);
-      this.messages = [];
+      let medicationStatus = false;
+      let activityType = '';
+      try {
+        const medicationStatusRes = await axios.post(
+          `${process.env.AI_API_URL}/classify-tremor`,
+          this.messages,
+        );
+        medicationStatus = medicationStatusRes.data;
+
+        const activityTypeRes = await axios.post(
+          `${process.env.AI_API_URL}/classify-activity`,
+          this.messages,
+        );
+        activityType = activityTypeRes.data;
+
+        const activityClassification: ActivityClassification = {
+          timestamp: Date.now(),
+          activityType: activityType,
+          medicationStatus: medicationStatus,
+        };
+        console.log('Classification', activityClassification);
+        this.socketSerice.socket.emit(
+          process.env.CLASSIFICATION_CLIENT,
+          JSON.stringify(activityClassification),
+        );
+      } catch (ex) {
+        console.error(ex);
+      }
+      // this.socketSerice.socket.emit(
+      //   process.env.EVENTS_CLIENT,
+      //   JSON.stringify(this.messages),
+      // );
+      // this.messagesToStore = this.messagesToStore.concat(this.messages);
+      // this.messages = [];
     }, DELAY);
   }
-
-
 
   async errorHandler(err: any) {
     console.log('Hello error received');

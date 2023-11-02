@@ -1,7 +1,10 @@
-from flask import Flask
-import psycopg2 
+import random
+import json
+from flask import Flask, g, request
+import psycopg2
 from configparser import ConfigParser
-
+from flask_cors import CORS
+from predictors import predict_tremor, predict_activity
 
 def config(filename='database.ini', section='postgresql'):
     # create a parser
@@ -20,67 +23,58 @@ def config(filename='database.ini', section='postgresql'):
     print(db)
     return db
 
-# def connect():
-    """ Connect to the PostgreSQL database server """
-    conn = None
-    try:
-        # read connection parameters
-        params = config()
+def connect():
+    if 'db' not in g: 
+        """ Connect to the PostgreSQL database server """
+        conn = None
+        try:
+            # read connection parameters
+            params = config()
 
-        # connect to the PostgreSQL server
-        print('Connecting to the PostgreSQL database...')
-        conn = psycopg2.connect(**params)
-		
-        # create a cursor
-        cur = conn.cursor()
-        
-	# execute a statement
-        print('PostgreSQL database version:')
-        cur.execute('SELECT version()')
+            # connect to the PostgreSQL server
+            print('Connecting to the PostgreSQL database...')
+            g.db = psycopg2.connect(**params)
 
-        # display the PostgreSQL database server version
-        db_version = cur.fetchone()
-        print(db_version)
-       
-	# close the communication with the PostgreSQL
-        cur.close()
-    except (Exception, psycopg2.DatabaseError) as error:
-        print(error)
-    finally:
-        if conn is not None:
-            conn.close()
-            print('Database connection closed.')
-
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+    return g.db
+    
 
 app = Flask(__name__)
 
+@app.before_request
+def before_request():
+   g.db = connect()
+
+@app.teardown_request
+def teardown_request(exception):
+    g.db.close()
+
 @app.route("/")
 def index():
-    conn = psycopg2.connect(**config())
+    conn = g.db
     cur = conn.cursor()
-    data = cur.execute('SELECT * FROM public.ActivityRecording')
-    print(data.fetchall())
-    cur.close()
-    conn.close()
+    cur.execute('SELECT * FROM public."ActivityRecording"')
+    data = cur.fetchall()
+    
+    return data
 
-    return "Main only "
-
-@app.route("/classify-tremor") # uses imu data to classify on/off data
+@app.route("/classify-tremor", methods=['POST']) # uses imu data to classify on/off data
 def classify_tremor():
-    return True
+    imuData = request.json
+    result = predict_tremor(imuData)
+    return json.dumps(result)
 
-@app.route("/classify-activity")
+@app.route("/classify-activity", methods=['POST'])
 def classify_activity():
-    return "relax"
+    imuData = request.json
+    result = predict_activity(imuData)
+    return result
 
 @app.route("/get-updrs") # uses voice and imu data
 def get_updrs():
-    return 0
+    return json.dumps(random.random())
 
 
-conn = psycopg2.connect(**config())
-cur = conn.cursor()
-data = cur.execute('SELECT * FROM ActivityRecording')
-print(data.fetchall())
-cur.close()
-conn.close()
+CORS(app)
+app.run(host="localhost", port=8080, debug=True)

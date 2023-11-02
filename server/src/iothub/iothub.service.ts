@@ -1,6 +1,8 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-
+// import { Client } from 'azure-iothub';
+// import { Message } from 'azure-iot-common';
 import {
+  EventData,
   EventHubBufferedProducerClient,
   EventHubConsumerClient,
   EventHubProducerClient,
@@ -76,6 +78,21 @@ export class IothubService implements OnModuleInit {
     }
   }
 
+  async triggerLcd() {
+    const LCD_KEY = 'LET THERE BE LIGHT';
+    try {
+      // const event: EventData = new Event('lcd', {});
+      const result = await this.producer.enqueueEvent({
+        body: LCD_KEY,
+        // contentType: 'text/plain',
+      });
+      console.log('Sent message', LCD_KEY);
+      return result;
+    } catch (ex) {
+      console.error(ex);
+    }
+  }
+
   async messageHandler(events: ReceivedEventData[]) {
     for (const event of events) {
       const deviceId = event.systemProperties['iothub-connection-device-id'];
@@ -107,9 +124,10 @@ export class IothubService implements OnModuleInit {
 
     // Wait for the user to label their data and set their name before receiving it on the server
     this.timerId = setTimeout(async () => {
-      console.log('Sending', JSON.stringify(this.messages));
       let medicationStatus = false;
       let activityType = '';
+      if (this.messages.length === 0) return;
+      console.log('Sending', JSON.stringify(this.messages));
       try {
         const medicationStatusRes = await axios.post(
           `${process.env.AI_API_URL}/classify-tremor`,
@@ -136,12 +154,12 @@ export class IothubService implements OnModuleInit {
       } catch (ex) {
         console.error(ex);
       }
-      // this.socketSerice.socket.emit(
-      //   process.env.EVENTS_CLIENT,
-      //   JSON.stringify(this.messages),
-      // );
-      // this.messagesToStore = this.messagesToStore.concat(this.messages);
-      // this.messages = [];
+      this.socketSerice.socket.emit(
+        process.env.EVENTS_CLIENT,
+        JSON.stringify(this.messages),
+      );
+      this.messagesToStore = this.messagesToStore.concat(this.messages);
+      this.messages = [];
     }, DELAY);
   }
 

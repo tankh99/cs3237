@@ -57,6 +57,7 @@ export default function IOTEvents() {
         <TableCaption>Received IMU data</TableCaption>
         <TableHeader>
           <TableRow>
+            <TableHead>Timestamp</TableHead>
             <TableHead>X</TableHead>
             <TableHead>Y</TableHead>
             <TableHead>Z</TableHead>
@@ -68,6 +69,7 @@ export default function IOTEvents() {
             const {x, y, z} = event
             return (
               <TableRow key={index}>
+                <TableCell>{new Date(event.timestamp).toTimeString()}</TableCell>
                 <TableCell>{x}</TableCell>
                 <TableCell>{y}</TableCell>
                 <TableCell>{z}</TableCell>

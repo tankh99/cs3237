@@ -79,7 +79,6 @@ static uint8_t sas_signature_buffer[256];
 static unsigned long next_telemetry_send_time_ms = 0;
 static unsigned long next_collection_time_ms = 0;
 static char telemetry_topic[128];
-static uint32_t telemetry_send_count = 0;
 static String telemetry_payload = "{}";
 
 #define INCOMING_DATA_BUFFER_SIZE 128
@@ -192,7 +191,6 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
       }
       incoming_data[i] = '\0';
       Logger.Info("Data: " + String(incoming_data));
-
       break;
     case MQTT_EVENT_BEFORE_CONNECT:
       Logger.Info("MQTT event MQTT_EVENT_BEFORE_CONNECT");
@@ -255,6 +253,8 @@ static int initializeMqttClient()
   mqtt_config.port = mqtt_port;
   mqtt_config.client_id = mqtt_client_id;
   mqtt_config.username = mqtt_username;
+  mqtt_config.out_buffer_size = 8192;
+
 
 #ifdef IOT_CONFIG_USE_X509_CERT
   Logger.Info("MQTT client using X509 Certificate authentication");

@@ -37,7 +37,7 @@ export class IothubService implements OnModuleInit {
     private prismaService: PrismaService,
   ) {}
   timerId: NodeJS.Timeout;
-  connectionString = `Endpoint=${process.env.ENDPOINT};EntityPath=${process.env.ENTITY_PATH};SharedAccessKeyName=iothubowner;SharedAccessKey=${process.env.SHARED_ACCESS_KEY};HostName=${process.env.HOST_NAME}`;
+  connectionString = `Endpoint=${process.env.ENDPOINT};EntityPath=${process.env.ENTITY_PATH};SharedAccessKeyName=device;SharedAccessKey=${process.env.SHARED_ACCESS_KEY};HostName=${process.env.HOST_NAME}`;
   messages = [];
   messagesToStore = [];
   producer: EventHubBufferedProducerClient;

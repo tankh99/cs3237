@@ -36,7 +36,7 @@ betas = (0.9, 0.999)
 model = Grouped2DCNN()
 optimizer = optim.NAdam(model.parameters(), lr=lr, betas=betas)
 
-file_path = './best_2dcnn_imu_onoff_model.pth'
+file_path = './models/best_2dcnn_imu_onoff_model.pth'
 
 checkpoint = torch.load(file_path)
 model.load_state_dict(checkpoint['state_dict'])

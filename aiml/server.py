@@ -76,5 +76,6 @@ def get_updrs():
     return json.dumps(random.random())
 
 
+
 CORS(app)
 app.run(host="localhost", port=8080, debug=True)

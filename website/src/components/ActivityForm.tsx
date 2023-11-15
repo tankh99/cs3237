@@ -3,7 +3,8 @@ import React from 'react'
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import axios from 'axios';
-import useEvents, { IMUActivityEventRecording } from '@/lib/utils/hooks/useEvents';
+import useEvents from '@/lib/utils/hooks/useEvents';
+import { IMUActivityEventRecording } from '@/redux/store/eventSlice';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 export type ActivityMetadata = {

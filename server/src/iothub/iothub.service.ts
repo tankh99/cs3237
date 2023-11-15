@@ -12,6 +12,14 @@ import { Server } from 'socket.io';
 import { SocketService } from 'src/socket/socket.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import axios from 'axios';
+import { Client, Registry } from 'azure-iothub';
+// const FFT = require('fft.js');
+const fft = require('jsfft');
+// const Pitchfinder = require('pitchfinder');
+import { AudioContext } from 'web-audio-api';
+
+// const fft = require('fft-js').fft;
+// import fft from 'fft-js'
 
 export type IMUActivityEventRecording = {
   key: string;
@@ -78,43 +86,67 @@ export class IothubService implements OnModuleInit {
     }
   }
 
+  // Send message directly to device, rather than event hubs
   async triggerLcd() {
     const LCD_KEY = 'LET THERE BE LIGHT';
-    try {
-      // const event: EventData = new Event('lcd', {});
-      const result = await this.producer.enqueueEvent({
-        body: LCD_KEY,
-        // contentType: 'text/plain',
-      });
-      console.log('Sent message', LCD_KEY);
-      return result;
-    } catch (ex) {
-      console.error(ex);
-    }
+    const connectionString = this.connectionString;
+    const deviceId = process.env.DEVICE_ID;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const registry = Registry.fromConnectionString(connectionString);
+    const client = Client.fromConnectionString(connectionString);
+    client.open((err) => {
+      if (err) {
+        console.error('Could not connect: ' + err.message);
+      } else {
+        console.log('Client connected to IoT Hub.');
+
+        client.on('message', (message) => {
+          console.log('Received message from device: ' + message.getData());
+        });
+      }
+    });
+
+    client.send(deviceId, LCD_KEY, (err) => {
+      if (err) {
+        console.error('Error sending message:', err.toString());
+      } else {
+        console.log('Message sent successfully.');
+      }
+    });
+    // try {
+    //   // const event: EventData = new Event('lcd', {});
+    //   const result = await this.producer.enqueueEvent({
+    //     body: LCD_KEY,
+    //     // contentType: 'text/plain',
+    //   });
+    //   console.log('Sent message', LCD_KEY);
+    //   return result;
+    // } catch (ex) {
+    //   console.error(ex);
+    // }
   }
 
   async messageHandler(events: ReceivedEventData[]) {
     for (const event of events) {
       const deviceId = event.systemProperties['iothub-connection-device-id'];
 
-      let data: IMUActivityEventRecording = {
-        key: 'imu1',
-        x: 0,
-        y: 0,
-        z: 0,
-        timestamp: Date.now(),
-        device_id: deviceId,
-        activity_type: '',
-      };
       // Assume we receive JSOn only
       const body = event.body;
       if (typeof body === 'object') {
-        for (const coord of event.body.data) {
-          data = {
-            ...data,
-            ...coord,
-          };
-          this.messages.push(data);
+        if (event.body.key === 'mic_2') {
+          console.log(event.body);
+
+          for (const amp of event.body.data) {
+          }
+        } else {
+          for (const coord of event.body.data) {
+            const imuData: IMUActivityEventRecording = {
+              ...coord,
+              timestamp: Date.now(),
+              device_id: deviceId,
+            };
+            this.messages.push(imuData);
+          }
         }
       }
     }
@@ -126,18 +158,24 @@ export class IothubService implements OnModuleInit {
     this.timerId = setTimeout(async () => {
       let medicationStatus = false;
       let activityType = '';
-      if (this.messages.length === 0) return;
-      console.log('Sending', JSON.stringify(this.messages));
+      const activityLookback = 10;
+      const tremorLookback = 10;
+      if (this.messages.length < activityLookback) return;
+      const activityData = this.messages.slice(-activityLookback); // Get enough entries for lookback classification
+      const tremorData = this.messages.slice(-tremorLookback); // Get enough entries for lookback classification
+      // console.log('Sending', JSON.stringify(this.messages));
       try {
+        // console.log(tremorData);
+        // console.log(activityData);
         const medicationStatusRes = await axios.post(
           `${process.env.AI_API_URL}/classify-tremor`,
-          this.messages,
+          tremorData,
         );
         medicationStatus = medicationStatusRes.data;
 
         const activityTypeRes = await axios.post(
           `${process.env.AI_API_URL}/classify-activity`,
-          this.messages,
+          activityData,
         );
         activityType = activityTypeRes.data;
 
@@ -146,7 +184,7 @@ export class IothubService implements OnModuleInit {
           activityType: activityType,
           medicationStatus: medicationStatus,
         };
-        console.log('Classification', activityClassification);
+        // console.log('Classification', activityClassification);
         this.socketSerice.socket.emit(
           process.env.CLASSIFICATION_CLIENT,
           JSON.stringify(activityClassification),
@@ -164,7 +202,8 @@ export class IothubService implements OnModuleInit {
   }
 
   async errorHandler(err: any) {
-    console.log('Hello error received');
-    console.log(err.message);
+    console.log('Error:');
+    // console.log(err.message);
   }
+
 }

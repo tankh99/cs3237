@@ -1,11 +1,11 @@
-'use client';
+'use client'
 
 import useAnalytics from '@/lib/utils/hooks/useAnalytics'
 import React from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 
 export default function Classifications() {
-  const [activityClasifications] = useAnalytics();
+  const [activityClassifications] = useAnalytics();
   return (
     <div>
       <Table>
@@ -18,7 +18,7 @@ export default function Classifications() {
         </TableHeader>
         <TableBody>
 
-          {activityClasifications.map((activity, index) => {
+          {activityClassifications.map((activity, index) => {
             const {timestamp, medicationStatus, activityType} = activity;
             return (
               <TableRow key={index}>

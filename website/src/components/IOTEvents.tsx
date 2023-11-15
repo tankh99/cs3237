@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react'
 import { Button } from './ui/button'
-import useEvents, { IMUActivityEventRecording } from '@/lib/utils/hooks/useEvents';
+import useEvents from '@/lib/utils/hooks/useEvents';
+import { IMUActivityEventRecording } from '@/redux/store/eventSlice';
 import { socket } from '@/lib/utils/socket';
 import { EVENTS_SERVER } from '@/lib/sockets';
 import { Input } from './ui/input';

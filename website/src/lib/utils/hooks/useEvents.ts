@@ -5,26 +5,21 @@ import { io, Socket } from "socket.io-client";
 import {socket} from '@/lib/utils/socket';
 import { EVENTS_CLIENT } from '@/lib/sockets';
 import { ActivityMetadata } from '@/components/ActivityForm';
-
-export type IMUActivityEventRecording = {
-  x: number;
-  y: number;
-  z: number;
-  timestamp: number;
-  activity_type?: string;
-  device_id?: string;
-}
+import { IMUActivityEventRecording, addEvents, resetEvents } from '@/redux/store/eventSlice';
+import { useAppDispatch, useAppSelector } from './useRedux';
 
 export default function useEvents() {
 
-  const [events, setEvents] = useState<IMUActivityEventRecording[]>([]);
+  const events = useAppSelector((state) => state.events.events);
+  const dispatch = useAppDispatch();
+  // const [events, setEvents] = useState<IMUActivityEventRecording[]>([]);
   const [loading, setLoading] = useState(false)
   useEffect(() => {
-    const fetchEvents = async () => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/`);
-      const data = await res.json();
-      setEvents(data);
-    }
+    // const fetchEvents = async () => {
+    //   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/`);
+    //   const data = await res.json();
+    //   // setEvents(data);
+    // }
     const initConnection = () => {
       if (!socket.connected) setLoading(true);
       console.log("Triggered")
@@ -44,7 +39,7 @@ export default function useEvents() {
       socket.on(EVENTS_CLIENT, (data: string) => {
         const events: IMUActivityEventRecording[] = JSON.parse(data);
         console.log("Events", events)
-        setEvents((prev) => prev.concat(events));
+        dispatch(addEvents(events));
       })
     }
       initConnection();
@@ -67,7 +62,7 @@ export default function useEvents() {
         body: JSON.stringify(events)
       })
       console.log("Uploaded", events)
-      setEvents([]);
+      dispatch(resetEvents());
       alert(`Uploaded data as activity type ${values.activityType}`);
       console.log(res);
     } catch (ex) {

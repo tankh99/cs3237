@@ -1,20 +1,19 @@
-// import { socket } from '@/utils/socket';
+'use client';
+
 import { useEffect, useState } from 'react';
 import { io, Socket } from "socket.io-client";
 import {socket} from '@/lib/utils/socket';
 import { CLASSIFICATION_CLIENT, EVENTS_CLIENT } from '@/lib/sockets';
 import { ActivityMetadata } from '@/components/ActivityForm';
+import { ActivityClassification, addClassifications } from '@/redux/store/activityClassificationSlice';
+import { useAppDispatch, useAppSelector } from './useRedux';
+import useEvents from './useEvents';
 
-export type ActivityClassification = {
-  timestamp: number;
-  name?: string;
-  device_id?: string;
-  activityType: string;
-  medicationStatus: boolean;
-};
 export default function useAnalytics() {
 
-  const [activityClassifications, setActivityClassifications] = useState<ActivityClassification[]>([]);
+  const activityClassifications = useAppSelector((state) => state.classifications.classifications);
+  const dispatch = useAppDispatch();
+  const [events] = useEvents();
   const [loading, setLoading] = useState(false)
   useEffect(() => {
     
@@ -37,7 +36,8 @@ export default function useAnalytics() {
       socket.on(CLASSIFICATION_CLIENT, (data: string) => {
         const activityClassifications: ActivityClassification[] = JSON.parse(data);
         console.log("ActivityClassifications", activityClassifications)
-        setActivityClassifications((prev) => prev.concat(activityClassifications));
+        dispatch(addClassifications(activityClassifications));
+        // setActivityClassifications((prev) => prev.concat(activityClassifications));
       })
     }
       initConnection();

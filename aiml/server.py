@@ -62,20 +62,29 @@ def index():
 @app.route("/classify-tremor", methods=['POST']) # uses imu data to classify on/off data
 def classify_tremor():
     imuData = request.json
-    result = predict_tremor(imuData)
+    parsed_data = parse_imu_data(imuData)
+    result = predict_tremor(parsed_data)
     return json.dumps(result)
 
 @app.route("/classify-activity", methods=['POST'])
 def classify_activity():
     imuData = request.json
-    result = predict_activity(imuData)
+    parsed_data = parse_imu_data(imuData)
+    result = predict_activity(parsed_data)
     return result
+    # return json.dumps("HELLO")
 
 @app.route("/get-updrs") # uses voice and imu data
 def get_updrs():
     return json.dumps(random.random())
 
-
+def parse_imu_data(data):
+    parsed = []
+    for val in data:
+        row = [val['x'], val['y'], val['z']]
+        parsed.append(row)
+    print(parsed)
+    return parsed
 
 CORS(app)
 app.run(host="localhost", port=8080, debug=True)

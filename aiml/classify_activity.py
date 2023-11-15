@@ -43,7 +43,7 @@ range_rand = 5.0
 
 # Expects an input of 10-15 pieces of tri-axial acceleration values over 10-15 seconds
 def classify(input):
-    input = [input] * 32
+    input = np.tile(input, (32,1, 1)) # Creates a batch of 32
     input = torch.FloatTensor(input)
     output = model(input)
     return torch.argmax(output[0])

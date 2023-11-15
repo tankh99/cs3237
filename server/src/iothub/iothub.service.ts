@@ -2,24 +2,14 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 // import { Client } from 'azure-iothub';
 // import { Message } from 'azure-iot-common';
 import {
-  EventData,
   EventHubBufferedProducerClient,
   EventHubConsumerClient,
-  EventHubProducerClient,
   ReceivedEventData,
 } from '@azure/event-hubs';
-import { Server } from 'socket.io';
 import { SocketService } from 'src/socket/socket.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import axios from 'axios';
 import { Client, Registry } from 'azure-iothub';
-// const FFT = require('fft.js');
-const fft = require('jsfft');
-// const Pitchfinder = require('pitchfinder');
-import { AudioContext } from 'web-audio-api';
-
-// const fft = require('fft-js').fft;
-// import fft from 'fft-js'
 
 export type IMUActivityEventRecording = {
   key: string;
@@ -38,15 +28,24 @@ export type ActivityClassification = {
   activityType: string;
   medicationStatus: boolean;
 };
+
+export type MicRecording = {
+  p2p: number;
+  ff: number;
+  device_id?: string;
+  timestamp: number;
+};
 @Injectable()
 export class IothubService implements OnModuleInit {
   constructor(
     private socketSerice: SocketService,
     private prismaService: PrismaService,
   ) {}
-  timerId: NodeJS.Timeout;
+  micTimerId: NodeJS.Timeout;
+  imuTimerId: NodeJS.Timeout;
   connectionString = `Endpoint=${process.env.ENDPOINT};EntityPath=${process.env.ENTITY_PATH};SharedAccessKeyName=device;SharedAccessKey=${process.env.SHARED_ACCESS_KEY};HostName=${process.env.HOST_NAME}`;
-  messages = [];
+  imu = [];
+  mic = [];
   messagesToStore = [];
   producer: EventHubBufferedProducerClient;
   onModuleInit() {
@@ -127,6 +126,8 @@ export class IothubService implements OnModuleInit {
   }
 
   async messageHandler(events: ReceivedEventData[]) {
+    let isImu = false;
+    let isMic = false;
     for (const event of events) {
       const deviceId = event.systemProperties['iothub-connection-device-id'];
 
@@ -134,70 +135,94 @@ export class IothubService implements OnModuleInit {
       const body = event.body;
       if (typeof body === 'object') {
         if (event.body.key === 'mic_2') {
-          console.log(event.body);
-
-          for (const amp of event.body.data) {
+          isMic = true;
+          for (const data of event.body.data) {
+            const micData: MicRecording = {
+              ...data,
+              timestamp: Date.now(),
+            };
+            this.mic.push(micData);
           }
         } else {
+          isImu = true;
           for (const coord of event.body.data) {
             const imuData: IMUActivityEventRecording = {
               ...coord,
               timestamp: Date.now(),
               device_id: deviceId,
             };
-            this.messages.push(imuData);
+            this.imu.push(imuData);
           }
         }
       }
     }
     // Prevent sending data if there are stilll messages within 10ms
     const DELAY = 3000; // Wait DELAY ms before sending data to the database. There's an issue where if you move this to class body, the function runs immmediately
-    clearTimeout(this.timerId);
+    if (isImu) clearTimeout(this.imuTimerId);
+    if (isMic) clearTimeout(this.micTimerId);
 
-    // Wait for the user to label their data and set their name before receiving it on the server
-    this.timerId = setTimeout(async () => {
-      let medicationStatus = false;
-      let activityType = '';
-      const activityLookback = 10;
-      const tremorLookback = 10;
-      if (this.messages.length < activityLookback) return;
-      const activityData = this.messages.slice(-activityLookback); // Get enough entries for lookback classification
-      const tremorData = this.messages.slice(-tremorLookback); // Get enough entries for lookback classification
+    // This function only displays the data to the user, and does not save anything yet!
+    this.imuTimerId = setTimeout(async () => {
       // console.log('Sending', JSON.stringify(this.messages));
-      try {
-        // console.log(tremorData);
-        // console.log(activityData);
-        const medicationStatusRes = await axios.post(
-          `${process.env.AI_API_URL}/classify-tremor`,
-          tremorData,
-        );
-        medicationStatus = medicationStatusRes.data;
-
-        const activityTypeRes = await axios.post(
-          `${process.env.AI_API_URL}/classify-activity`,
-          activityData,
-        );
-        activityType = activityTypeRes.data;
-
-        const activityClassification: ActivityClassification = {
-          timestamp: Date.now(),
-          activityType: activityType,
-          medicationStatus: medicationStatus,
-        };
-        // console.log('Classification', activityClassification);
+      if (this.imu.length > 0) {
+        try {
+          // console.log(tremorData);
+          // console.log(activityData);
+          this.normaliseImuData(this.imu);
+          const medicationStatus = await this.classifyTremor(this.imu);
+          const activityType = await this.classifyActivity(this.imu);
+  
+          const activityClassification: ActivityClassification = {
+            timestamp: Date.now(),
+            activityType: activityType,
+            medicationStatus: medicationStatus,
+          };
+  
+          // console.log('Classification', activityClassification);
+          this.socketSerice.socket.emit(
+            process.env.CLASSIFICATION_CLIENT,
+            JSON.stringify(activityClassification),
+          );
+        } catch (ex) {
+          console.error(ex);
+        }
         this.socketSerice.socket.emit(
-          process.env.CLASSIFICATION_CLIENT,
-          JSON.stringify(activityClassification),
+          process.env.EVENTS_CLIENT,
+          JSON.stringify(this.imu),
         );
-      } catch (ex) {
-        console.error(ex);
+        // this.messagesToStore = this.messagesToStore.concat(this.imu);
       }
-      this.socketSerice.socket.emit(
-        process.env.EVENTS_CLIENT,
-        JSON.stringify(this.messages),
-      );
-      this.messagesToStore = this.messagesToStore.concat(this.messages);
-      this.messages = [];
+      this.imu = [];
+    }, DELAY);
+
+    this.micTimerId = setTimeout(async () => {
+      // console.log('Sending', JSON.stringify(this.messages));
+      if (this.mic.length > 0) {
+        try {
+          // console.log(tremorData);
+          // console.log(activityData);
+          const updrs = await this.classifyMic(this.mic);
+          // console.log('Classification', activityClassification);
+          
+          this.socketSerice.socket.emit(
+            process.env.MIC_CLIENT,
+            JSON.stringify({
+              updrs,
+            }),
+          );
+        } catch (ex) {
+          console.error(ex);
+        }
+        
+        // this.socketSerice.socket.emit(
+        //   process.env.MIC_CLIENT,
+        //   JSON.stringify(this.mic),
+        // );
+
+        // this.messagesToStore = this.messagesToStore.concat(this.imu);
+        this.mic = [];
+      };
+
     }, DELAY);
   }
 
@@ -206,4 +231,58 @@ export class IothubService implements OnModuleInit {
     // console.log(err.message);
   }
 
+  normaliseImuData(data: IMUActivityEventRecording[]) {
+    let xSum = 0;
+    let ySum = 0;
+    let zSum = 0;
+    for (const recording of data) {
+      xSum += recording.x;
+      ySum += recording.y;
+      zSum += recording.z;
+    }
+    const xAvg = xSum / data.length;
+    const yAvg = ySum / data.length;
+    const zAvg = zSum / data.length;
+    for (const recording of data) {
+      recording.x -= xAvg;
+      recording.y -= yAvg;
+      recording.z -= zAvg;
+    }
+    return data;
+  }
+
+  async classifyActivity(messages): Promise<string> {
+    const activityLookback = 10;
+    const activityData = messages.slice(-activityLookback); // Get enough entries for lookback classification
+    const activityTypeRes = await axios.post(
+      `${process.env.AI_API_URL}/classify-activity`,
+      { data: activityData },
+    );
+    const activityType = activityTypeRes.data;
+
+    return activityType;
+  }
+
+  async classifyTremor(messages): Promise<boolean> {
+    const tremorLookback = 10;
+    const tremorData = messages.slice(-tremorLookback); // Get enough entries for lookback classification
+    const medicationStatusRes = await axios.post(
+      `${process.env.AI_API_URL}/classify-tremor`,
+      { data: tremorData },
+    );
+    const medicationStatus = medicationStatusRes.data;
+    return medicationStatus;
+  }
+  
+  async classifyMic(messages): Promise<number[]> {
+    // const micLookback = 10;
+    // const micData = messages.slice(-micLookback); // Get enough entries for lookback classification
+    const micData = messages;
+    const updrsRes = await axios.post(
+      `${process.env.AI_API_URL}/get-updrs`,
+      { data: micData },
+    );
+    const updrs = updrsRes.data;
+    return updrs;
+  }
 }

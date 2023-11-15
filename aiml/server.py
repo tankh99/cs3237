@@ -81,11 +81,7 @@ def get_updrs():
     data = parse_mic_data(micData)
     sound_data = get_sound_data(data)
     updrs = predict_updrs(sound_data)
-
-    print("UPDRS")
-    print(updrs)
-    # return jsonify(data=updrs)
-    return json.dumps(updrs.tolist())
+    return json.dumps(updrs.tolist()[0]) # because np array cannot be serialised as json
 
 ##
 ## Helper functions
@@ -103,10 +99,10 @@ def parse_mic_data(data):
     inv_fundamental_frequency = []
     peak_to_peak = []
     for i, val in enumerate(data):
-        if i > 0 and i % THRESHOLD == 0:
-            result.append((inv_fundamental_frequency, peak_to_peak))
-            inv_fundamental_frequency = []
-            peak_to_peak = []
+        # if i > 0 and i % THRESHOLD == 0:
+        #     result.append((inv_fundamental_frequency, peak_to_peak))
+        #     inv_fundamental_frequency = []
+        #     peak_to_peak = []
         ff = val['ff']
         ff = float(ff)
         invff = 1/ff
@@ -115,7 +111,7 @@ def parse_mic_data(data):
         p2p = val['p2p']
         p2p = float(p2p)
         peak_to_peak.append(p2p)
-
+    result.append((inv_fundamental_frequency, peak_to_peak))
     # if len(inv_fundamental_frequency) > 0 or len(peak_to_peak) > 0:
     #     result.append((inv_fundamental_frequency, peak_to_peak))
     return result

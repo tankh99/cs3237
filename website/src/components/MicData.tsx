@@ -12,20 +12,19 @@ export default function MicData() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Timestamp</TableHead>
-            <TableHead>Peak-to-peak</TableHead>
-            <TableHead>Fundamental frequency</TableHead>
+            <TableHead>UPDRS</TableHead>
+            {/* <TableHead>UPDRS</TableHead>
+            <TableHead>Fundamental frequency</TableHead> */}
           </TableRow>
         </TableHeader>
         <TableBody>
           
           {micRecordings && micRecordings.map((micRecording, index) => {
-            const {p2p, ff, timestamp} = micRecording
+            // const {p2p, ff, timestamp} = micRecording
+            // const {p2p, ff, timestamp} = micRecording
             return (
               <TableRow key={index}>
-                <TableCell>{new Date(micRecording.timestamp).toTimeString()}</TableCell>
-                <TableCell>{p2p}</TableCell>
-                <TableCell>{ff}</TableCell>
+                <TableCell>{micRecording.updrs}</TableCell>
               </TableRow>
               )
             })}

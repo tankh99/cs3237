@@ -27,9 +27,9 @@ export const micSlice = createSlice({
 })
 
 export type MicRecording = {
-  p2p: number;
-  ff: number;
-  timestamp: number;
+  p2p?: number;
+  ff?: number;
+  updrs: number;
   device_id?: string;
 };
 

@@ -121,9 +121,9 @@ void receivedCallback(char* topic, byte* payload, unsigned int length)
 
 static void process_data(String payload) {
   if (payload == "LET THERE BE LIGHT") {
-    lcd.init();                      // initialize the lcd 
-    lcd.init();
+    
     // Print a message to the LCD.
+    lcd.clear();
     lcd.backlight();
     lcd.blink();
     lcd.setCursor(3,0);
@@ -309,6 +309,7 @@ static void establishConnection()
 void setup() { 
   establishConnection(); 
   Wire.begin();  // Initiate the Wire library
+  lcd.init();                      // initialize the lcd 
   delay(100);
 }
 

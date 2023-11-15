@@ -32,7 +32,6 @@ optimizer = optim.Adam(model.parameters())
 
 file_path = './models/activity-classification.pth'
 
-checkpoint = torch.load(file_path)
 model.load_state_dict(torch.load(file_path))
 model.eval()
 

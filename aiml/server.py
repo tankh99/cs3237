@@ -1,10 +1,11 @@
 import random
 import json
-from flask import Flask, g, request
+from flask import Flask, g, request, jsonify
 import psycopg2
 from configparser import ConfigParser
 from flask_cors import CORS
-from predictors import predict_tremor, predict_activity
+from predictors import predict_tremor, predict_activity, predict_updrs
+from mic import get_sound_data
 
 def config(filename='database.ini', section='postgresql'):
     # create a parser
@@ -61,30 +62,63 @@ def index():
 
 @app.route("/classify-tremor", methods=['POST']) # uses imu data to classify on/off data
 def classify_tremor():
-    imuData = request.json
+    imuData = request.json['data']
     parsed_data = parse_imu_data(imuData)
     result = predict_tremor(parsed_data)
-    return json.dumps(result)
+    return json.dumps(result) # required becuase boolean datatype
 
 @app.route("/classify-activity", methods=['POST'])
 def classify_activity():
-    imuData = request.json
+    imuData = request.json['data']
     parsed_data = parse_imu_data(imuData)
     result = predict_activity(parsed_data)
     return result
     # return json.dumps("HELLO")
 
-@app.route("/get-updrs") # uses voice and imu data
+@app.route("/get-updrs", methods=['POST']) # uses voice data
 def get_updrs():
-    return json.dumps(random.random())
+    micData = request.json['data']
+    data = parse_mic_data(micData)
+    sound_data = get_sound_data(data)
+    updrs = predict_updrs(sound_data)
 
+    print("UPDRS")
+    print(updrs)
+    # return jsonify(data=updrs)
+    return json.dumps(updrs.tolist())
+
+##
+## Helper functions
+##
 def parse_imu_data(data):
     parsed = []
     for val in data:
         row = [val['x'], val['y'], val['z']]
         parsed.append(row)
-    print(parsed)
     return parsed
+
+def parse_mic_data(data):
+    THRESHOLD = 20 # Split data into chunks of arrays
+    result = []
+    inv_fundamental_frequency = []
+    peak_to_peak = []
+    for i, val in enumerate(data):
+        if i > 0 and i % THRESHOLD == 0:
+            result.append((inv_fundamental_frequency, peak_to_peak))
+            inv_fundamental_frequency = []
+            peak_to_peak = []
+        ff = val['ff']
+        ff = float(ff)
+        invff = 1/ff
+        inv_fundamental_frequency.append(invff)
+        
+        p2p = val['p2p']
+        p2p = float(p2p)
+        peak_to_peak.append(p2p)
+
+    # if len(inv_fundamental_frequency) > 0 or len(peak_to_peak) > 0:
+    #     result.append((inv_fundamental_frequency, peak_to_peak))
+    return result
 
 CORS(app)
 app.run(host="localhost", port=8080, debug=True)

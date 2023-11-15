@@ -299,7 +299,7 @@ void loop()
     initializeMqttClient();
   }
 #endif
-  if (recording) {
+  // if (recording) {
     collateData();
     delayMicroseconds(7);
     if (pos == 1024) {
@@ -311,7 +311,7 @@ void loop()
       delay(500);
       ESP.restart();
     }
-  }
+  // }
 }
 
 void calculate() {

@@ -39,9 +39,9 @@
 #define Z_Axis_Register_DATAZ1 0x37
 
 int ADXAddress = 0x53;  //Device address
-static int X0, X1, X_out;
-static int Y0, Y1, Y_out;
-static int Z1, Z0, Z_out;
+static long X0, X1, X_out;
+static long Y0, Y1, Y_out;
+static long Z1, Z0, Z_out;
 static float Xa, Ya, Za;
 
 static float x_data[20];
@@ -219,6 +219,7 @@ static void establishConnection()
   (void)initializeMqttClient();
 }
 
+int MAX = 65536;
 static void collateData() {
   Wire.beginTransmission(ADXAddress);  // Begin transmission to the Sensor
   //Ask the particular registers for data
@@ -235,7 +236,12 @@ static void collateData() {
       - X1 as the most significant byte */
   X1 = X1 << 8;
   X_out = X0 + X1;
+  // if (X_out > 256) {
+  //   X_out = X_out - MAX;
+  // } 
+  // Serial.println(X_out);
   Xa = X_out / 256.0;  // Xa = output value from -1 to +1, Gravity acceleration acting on the X-Axis
+  // Serial.println(Xa);
   //}
   // Y-Axis
   Wire.beginTransmission(ADXAddress);
@@ -248,7 +254,12 @@ static void collateData() {
   Y1 = Wire.read();
   Y1 = Y1 << 8;
   Y_out = Y0 + Y1;
+  // if (Y_out > 256) {
+  //   Y_out = Y_out - 256;
+  // } 
+  // Serial.println(Y_out);
   Ya = Y_out / 256.0;
+  // Serial.println(Ya);
   //}
   // Z-Axis
   Wire.beginTransmission(ADXAddress);
@@ -261,7 +272,12 @@ static void collateData() {
   Z1 = Wire.read();
   Z1 = Z1 << 8;
   Z_out = Z0 + Z1;
+  // if (Z_out > 256) {
+  //   Z_out = Z_out - 256;
+  // } 
+  // Serial.println(Z_out);
   Za = Z_out / 256.0;
+  // Serial.println(Za);
 
   x_data[pos] = Xa;
   y_data[pos] = Ya;

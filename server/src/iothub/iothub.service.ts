@@ -12,16 +12,23 @@ import axios from 'axios';
 import { Client, Registry } from 'azure-iothub';
 
 export type IMUActivityEventRecording = {
-  key: string;
   x: number;
   y: number;
   z: number;
   timestamp: number;
-  device_id: string;
-  activity_type: string;
+  activityType: string;
 };
 
-export type ActivityClassification = {
+export type IMUTremorRecording = {
+  x: number;
+  y: number;
+  z: number;
+  timestamp: number;
+  medicationStatus: boolean;
+};
+
+// Used for diary entry. Shows both medication status and activity predicted givne IMU values
+export type IMUClassificationResult = {
   timestamp: number;
   name?: string;
   device_id?: string;
@@ -38,7 +45,7 @@ export type MicRecording = {
 @Injectable()
 export class IothubService implements OnModuleInit {
   constructor(
-    private socketSerice: SocketService,
+    private socketService: SocketService,
     private prismaService: PrismaService,
   ) {}
   micTimerId: NodeJS.Timeout;
@@ -46,32 +53,37 @@ export class IothubService implements OnModuleInit {
   connectionString = `Endpoint=${process.env.ENDPOINT};EntityPath=${process.env.ENTITY_PATH};SharedAccessKeyName=device;SharedAccessKey=${process.env.SHARED_ACCESS_KEY};HostName=${process.env.HOST_NAME}`;
   imu = [];
   mic = [];
-  messagesToStore = [];
+  client: EventHubConsumerClient;
   producer: EventHubBufferedProducerClient;
   onModuleInit() {
     console.log('Initialising IOT Hub server');
-    const client = new EventHubConsumerClient(
-      process.env.EVENT_HUB_CONSUMER_GROUP,
-      this.connectionString,
-      // {},
-    );
-    client.subscribe({
-      processEvents: (events) => this.messageHandler(events),
-      processError: this.errorHandler,
-    });
-    console.log('Susbcribed to IoTHub');
+    if (!this.client) {
+      this.client = new EventHubConsumerClient(
+        process.env.EVENT_HUB_CONSUMER_GROUP,
+        this.connectionString,
+        // {},
+      );
 
-    this.producer = new EventHubBufferedProducerClient(
-      this.connectionString,
-      process.env.ENTITY_PATH,
-      {
-        maxWaitTimeInMs: 1000, // Wait at most 1000ms before sending
-        maxEventBufferLengthPerPartition: 1000, // OR until 1000 messages have been enqueued
-        onSendEventsErrorHandler: (err) => {
-          console.error(err);
+      this.client.subscribe({
+        processEvents: (events) => this.messageHandler(events),
+        processError: this.errorHandler,
+      });
+      console.log('Susbcribed to IoTHub');
+    }
+
+    if (!this.producer) {
+      this.producer = new EventHubBufferedProducerClient(
+        this.connectionString,
+        process.env.ENTITY_PATH,
+        {
+          maxWaitTimeInMs: 1000, // Wait at most 1000ms before sending
+          maxEventBufferLengthPerPartition: 1000, // OR until 1000 messages have been enqueued
+          onSendEventsErrorHandler: (err) => {
+            console.error(err);
+          },
         },
-      },
-    );
+      );
+    }
   }
 
   async sendMessage(message: string) {
@@ -97,7 +109,7 @@ export class IothubService implements OnModuleInit {
       if (err) {
         console.error('Could not connect: ' + err.message);
       } else {
-        console.log('Client connected to IoT Hub.');
+        console.log('Triggering LCD');
 
         client.on('message', (message) => {
           console.log('Received message from device: ' + message.getData());
@@ -129,7 +141,7 @@ export class IothubService implements OnModuleInit {
     let isImu = false;
     let isMic = false;
     for (const event of events) {
-      const deviceId = event.systemProperties['iothub-connection-device-id'];
+      // const deviceId = event.systemProperties['iothub-connection-device-id'];
 
       // Assume we receive JSOn only
       const body = event.body;
@@ -149,7 +161,7 @@ export class IothubService implements OnModuleInit {
             const imuData: IMUActivityEventRecording = {
               ...coord,
               timestamp: Date.now(),
-              device_id: deviceId,
+              // deviceId: deviceId,
             };
             this.imu.push(imuData);
           }
@@ -163,72 +175,67 @@ export class IothubService implements OnModuleInit {
 
     // This function only displays the data to the user, and does not save anything yet!
     this.imuTimerId = setTimeout(async () => {
-      // console.log('Sending', JSON.stringify(this.messages));
       if (this.imu.length > 0) {
         try {
-          // console.log(tremorData);
-          // console.log(activityData);
           this.normaliseImuData(this.imu);
           const medicationStatus = await this.classifyTremor(this.imu);
+          if (!medicationStatus) {
+            // If medication status is off, then trigger LCD
+            this.triggerLcd(); // Don't await, so that we don't slow down server
+          }
           const activityType = await this.classifyActivity(this.imu);
-  
-          const activityClassification: ActivityClassification = {
+
+          const activityClassification: IMUClassificationResult = {
             timestamp: Date.now(),
             activityType: activityType,
             medicationStatus: medicationStatus,
           };
-  
+
           // console.log('Classification', activityClassification);
-          this.socketSerice.socket.emit(
+          this.socketService.socket.emit(
             process.env.CLASSIFICATION_CLIENT,
             JSON.stringify(activityClassification),
           );
         } catch (ex) {
           console.error(ex);
         }
-        this.socketSerice.socket.emit(
+        console.log('Emitting ', this.imu.length);
+        this.socketService.socket.emit(
           process.env.EVENTS_CLIENT,
           JSON.stringify(this.imu),
         );
-        // this.messagesToStore = this.messagesToStore.concat(this.imu);
+        this.imu = [];
       }
-      this.imu = [];
     }, DELAY);
 
     this.micTimerId = setTimeout(async () => {
-      // console.log('Sending', JSON.stringify(this.messages));
       if (this.mic.length > 0) {
         try {
-          // console.log(tremorData);
-          // console.log(activityData);
-          const updrs = await this.classifyMic(this.mic);
-          // console.log('Classification', activityClassification);
-          
-          this.socketSerice.socket.emit(
+          const soundData = await this.getSoundData(this.mic);
+          const updrsPred = await this.classifyMic(this.mic);
+          this.socketService.socket.emit(
+            process.env.UPDRS_CLIENT,
+            JSON.stringify(updrsPred),
+          );
+          this.socketService.socket.emit(
             process.env.MIC_CLIENT,
-            JSON.stringify({
-              updrs,
-            }),
+            JSON.stringify(soundData),
           );
         } catch (ex) {
           console.error(ex);
         }
-        
+
         // this.socketSerice.socket.emit(
         //   process.env.MIC_CLIENT,
         //   JSON.stringify(this.mic),
         // );
-
-        // this.messagesToStore = this.messagesToStore.concat(this.imu);
         this.mic = [];
-      };
-
+      }
     }, DELAY);
   }
 
   async errorHandler(err: any) {
     console.log('Error:');
-    // console.log(err.message);
   }
 
   normaliseImuData(data: IMUActivityEventRecording[]) {
@@ -273,16 +280,27 @@ export class IothubService implements OnModuleInit {
     const medicationStatus = medicationStatusRes.data;
     return medicationStatus;
   }
-  
-  async classifyMic(messages): Promise<number[]> {
+
+  async classifyMic(messages): Promise<number> {
     // const micLookback = 10;
     // const micData = messages.slice(-micLookback); // Get enough entries for lookback classification
     const micData = messages;
-    const updrsRes = await axios.post(
-      `${process.env.AI_API_URL}/get-updrs`,
-      { data: micData },
-    );
+    const updrsRes = await axios.post(`${process.env.AI_API_URL}/get-updrs`, {
+      data: micData,
+    });
     const updrs = updrsRes.data;
     return updrs;
+  }
+
+  async getSoundData(messages): Promise<number[]> {
+    // const micLookback = 10;
+    // const micData = messages.slice(-micLookback); // Get enough entries for lookback classification
+    const micData = messages;
+    const soundDataRes = await axios.post(
+      `${process.env.AI_API_URL}/get-sound-data`,
+      { data: micData },
+    );
+    const soundData = soundDataRes.data;
+    return soundData;
   }
 }

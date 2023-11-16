@@ -108,13 +108,10 @@ def getapq11(inv_fundamental_frequency, peak_to_peak):
         apq11 = "Less than 11 data points"
     return apq11
 
-def get_sound_data(data):
+def get_sound_data(data, parse=False):
     converted = []
     for (peak_to_peak, inv_fundamental_frequency) in data:
         gtnbr = len(inv_fundamental_frequency) #no. of glottis periods
-        #print("inv_fundamental_frequency:", inv_fundamental_frequency)
-        #print("peak_to_peak:", peak_to_peak)
-        print((peak_to_peak, inv_fundamental_frequency))
         abs_jitter = getJitta(inv_fundamental_frequency)
         # local_jitter = getJitt(inv_fundamental_frequency)
         rap = getRap(inv_fundamental_frequency)
@@ -126,21 +123,24 @@ def get_sound_data(data):
         apq11 = getapq11(inv_fundamental_frequency, peak_to_peak)
         ddp_jitter = rap*3
         dda_shimmer = apq3*3
-        converted.append([abs_jitter, rap, ppq5, ddp_jitter, local_shimmer, db_shimmer, apq3, apq5, apq11, dda_shimmer])
+        if parse:
+            jsonobj =  {
+                'jitterAbs': abs_jitter, 
+                'jitterRap': rap, 
+                'jitterPPQ5': ppq5, 
+                'jitterDDP': ddp_jitter, 
+                'shimmerLocal': local_shimmer, 
+                'shimmerLocalDB': db_shimmer, 
+                'shimmerAPQ3': apq3, 
+                'shimmerAPQ5': apq5, 
+                'shimmerAPQ11': apq11, 
+                'shimmerDDA': dda_shimmer
+            }
+            converted.append(jsonobj)
+        else:
+            converted.append([abs_jitter, rap, ppq5, ddp_jitter, local_shimmer, db_shimmer, apq3, apq5, apq11, dda_shimmer])
         # return (abs_jitter, rap, ppq5, ddp_jitter, local_shimmer, db_shimmer, apq3, apq5, apq11, dda_shimmer)
     return converted
-    # return {
-    #     'jitter_abs': abs_jitter, 
-    #     'rap': rap, 
-    #     'ppq5': ppq5, 
-    #     'jitter_ddp': ddp_jitter, 
-    #     'shimmer_local': local_shimmer, 
-    #     'shimmer_db': db_shimmer, 
-    #     'apq3': apq3, 
-    #     'apq5': apq5, 
-    #     'apq11': apq11, 
-    #     'shimmer_dda': dda_shimmer
-    # }
     
         
 

@@ -4,7 +4,7 @@ import { RootState } from './store';
 
 
 export interface EventState {
-  events: IMUActivityEventRecording[];
+  events: IMURecording[];
 }
 
 
@@ -26,13 +26,20 @@ export const eventSlice = createSlice({
   }
 })
 
-export type IMUActivityEventRecording = {
+export type IMURecording = {
   x: number;
   y: number;
   z: number;
   timestamp: number;
-  activity_type?: string;
-  device_id?: string;
+  sessionName?: string;
+}
+
+export type IMUActivityEventRecording = IMURecording & {
+  activityType?: string;
+};
+
+export type IMUTremorRecording = IMURecording & {
+  medicationStatus?: boolean;
 };
 
 export const {addEvents, resetEvents} = eventSlice.actions;

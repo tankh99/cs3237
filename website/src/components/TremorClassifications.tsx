@@ -10,13 +10,13 @@ import { Input } from './ui/input';
 import ActivityForm from './ActivityForm';
 import { Table, TableHead, TableHeader, TableCaption, TableRow, TableBody, TableCell } from './ui/table';
 
-export default function IOTEvents() {
-  const [events, uploadEvents, _, loading] = useEvents();
+export default function TremorClassifications() {
+  const [events, uploadEvents, loading] = useEvents();
   const [activityName, setActivityName] = useState("");
 
-  // useEffect(() => {
-  //   console.log(events);
-  // }, [events])
+  useEffect(() => {
+    console.log(events);
+  }, [events])
   
   const sendData = async () => {
     try {

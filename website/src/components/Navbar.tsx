@@ -8,14 +8,18 @@ export default function Navbar() {
         <h3 className='font-bold'>TremorGuard</h3>
         <ul className='flex gap-x-4'>
           <li>
-
             <Link href="/">
-              Events
+              Home
             </Link>
           </li>
           <li>
-            <Link href="/diary">
-              Diary
+            <Link href="/imu">
+              IMU
+            </Link>
+          </li>
+          <li>
+            <Link href="/mic">
+              Microphone
             </Link>
           </li>
           {/* <li>Settings</li> */}

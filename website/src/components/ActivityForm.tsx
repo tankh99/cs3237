@@ -23,17 +23,16 @@ type P = {
 }
 export default function ActivityForm({uploadEvents}: P) {
   const onSubmit = async (values: any) => {
-    console.log(values);
     await uploadEvents(values);
-    try {
-      const tremorDetected = await axios.get(`${process.env.NEXT_PUBLIC_AI_API_URL}/classify-tremor`)
-      const activity = await  axios.get(`${process.env.NEXT_PUBLIC_AI_API_URL}/classify-activity`);
-      if (tremorDetected.data) {
-        alert(`Tremor detected while doing activity type: ${activity.data}`);
-      }
-    } catch (ex) {
-      console.error(ex);
-    }
+    // try {
+    //   // const tremorDetected = await axios.get(`${process.env.NEXT_PUBLIC_AI_API_URL}/classify-tremor`)
+    //   // const activity = await  axios.get(`${process.env.NEXT_PUBLIC_AI_API_URL}/classify-activity`);
+    //   // if (tremorDetected.data) {
+    //   //   alert(`Tremor detected while doing activity type: ${activity.data}`);
+    //   // }
+    // } catch (ex) {
+    //   console.error(ex);
+    // }
   }
   
   return (
@@ -41,7 +40,7 @@ export default function ActivityForm({uploadEvents}: P) {
       onSubmit={onSubmit}
       initialValues={initialValues}>
         {({handleChange, handleBlur, setFieldValue, values}) => (
-          <Form className='w-[400px] flex flex-col'>
+          <Form className='flex flex-col mx-auto'>
             Name: <Input name="name" placeholder="Name" onChange={handleChange}/>
             Activity Type: <Select name="activityType" defaultValue='relax' onValueChange={(value) => {
             setFieldValue("activityType", value)

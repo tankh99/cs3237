@@ -83,7 +83,7 @@ def classify(input):
     print(output.shape)
     print(torch.max(output.data, 1)[1])
     prediction = int(np.argmax(np.bincount(torch.max(output.data, 1)[1]))) 
-    return False if prediction == 0 else True
+    return True if prediction == 0 else False
     # input = [[random.uniform(-range_rand, range_rand) for i in range(3)] for j in range(15)]
     # input = z_score_normalize(pd.DataFrame(input)).values.tolist()
     # input = [input] * 32

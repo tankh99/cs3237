@@ -1,4 +1,4 @@
-import { Controller, Get, Res } from '@nestjs/common';
+import { Body, Controller, Get, Post, Res } from '@nestjs/common';
 import { IothubService } from './iothub.service';
 
 @Controller('iothub')
@@ -10,5 +10,13 @@ export class IothubController {
     const sentMessages = await this.iothubService.triggerLcd();
     console.log(sentMessages);
     res.send('Sent message');
+  }
+
+  // TODO: Move this to iothub controller
+
+  @Post('/send')
+  async sendMessage(@Body() body, @Res() res) {
+    const response = await this.iothubService.sendMessage(body);
+    res.json(response);
   }
 }

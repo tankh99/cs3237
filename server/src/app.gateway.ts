@@ -12,7 +12,7 @@ import { Server, Socket } from 'socket.io';
 import { SocketService } from 'src/socket/socket.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
-export class EventsGateway
+export class AppGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   constructor(private socketService: SocketService) {}

@@ -6,6 +6,14 @@ import random
 import numpy as np
 import pandas as pd
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+import random
+import pandas as pd
+import numpy as np
+
 class Grouped2DCNN(nn.Module):
     def __init__(self):
         super(Grouped2DCNN, self).__init__()
@@ -41,6 +49,8 @@ class Grouped2DCNN(nn.Module):
 #         print(output.shape) # torch.Size([32, 2])
         return output
 
+model = Grouped2DCNN()
+
 lr = 0.001
 betas = (0.9, 0.999)
 model = Grouped2DCNN()
@@ -56,18 +66,33 @@ model.eval()
 def z_score_normalize(df):
     return (df - df.mean())/df.std()
 
-range_rand = 5.0
+SAMPLE_RATE = 31.25 # samples per second
+DURATION = 60 # in seconds
+GROUP_SIZE = int(DURATION * SAMPLE_RATE)
+print(GROUP_SIZE)
 
 def classify(input):
-    input = [[random.uniform(-range_rand, range_rand) for i in range(3)] for j in range(15)]
+    range_rand = 1.0
+    input = [[random.uniform(-range_rand, range_rand) for i in range(3)] for j in range(GROUP_SIZE)]
     input = z_score_normalize(pd.DataFrame(input)).values.tolist()
-    input = [input] * 32
+    input = np.reshape(input, (1, 3, GROUP_SIZE, 1))
     input = torch.FloatTensor(input)
-    print(input.shape)
-    # preprocessing steps????
+    # print(input.shape)
 
     output = model(input)
     print(output.shape)
     print(torch.max(output.data, 1)[1])
     prediction = int(np.argmax(np.bincount(torch.max(output.data, 1)[1]))) 
     return False if prediction == 0 else True
+    # input = [[random.uniform(-range_rand, range_rand) for i in range(3)] for j in range(15)]
+    # input = z_score_normalize(pd.DataFrame(input)).values.tolist()
+    # input = [input] * 32
+    # input = torch.FloatTensor(input)
+    # print(input.shape)
+    # # preprocessing steps????
+
+    # output = model(input)
+    # print(output.shape)
+    # print(torch.max(output.data, 1)[1])
+    # prediction = int(np.argmax(np.bincount(torch.max(output.data, 1)[1]))) 
+    # return False if prediction == 0 else True

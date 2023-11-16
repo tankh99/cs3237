@@ -18,6 +18,5 @@ def predict_activity(data):
     return categories[predIndex]
 
 def predict_updrs(data):
-    print(data)
     updrs = classify_updrs(data)
     return updrs

@@ -78,15 +78,15 @@ def classify_activity():
 @app.route("/get-updrs", methods=['POST']) # uses voice data
 def get_updrs():
     micData = request.json['data']
-    data = parse_mic_data(micData)
-    sound_data = get_sound_data(data)
-    updrs = predict_updrs(sound_data)
+    micData = parse_mic_data(micData)
+    # sound_data = get_sound_data(data)
+    updrs = predict_updrs(micData)
     return json.dumps(updrs.tolist()[0]) # because np array cannot be serialised as json
 
 @app.route("/get-sound-data", methods=['POST']) # uses voice data
 def get_sound_values():
     micData = request.json['data']
-    data = parse_mic_data(micData)
+    data = parse_basic_mic_data(micData)
     sound_data = get_sound_data(data, True)
     return sound_data
 
@@ -100,16 +100,12 @@ def parse_imu_data(data):
         parsed.append(row)
     return parsed
 
-def parse_mic_data(data):
+def parse_basic_mic_data(data):
     THRESHOLD = 20 # Split data into chunks of arrays
     result = []
     inv_fundamental_frequency = []
     peak_to_peak = []
     for i, val in enumerate(data):
-        # if i > 0 and i % THRESHOLD == 0:
-        #     result.append((inv_fundamental_frequency, peak_to_peak))
-        #     inv_fundamental_frequency = []
-        #     peak_to_peak = []
         ff = val['ff']
         ff = float(ff)
         invff = 1/ff
@@ -119,6 +115,26 @@ def parse_mic_data(data):
         p2p = float(p2p)
         peak_to_peak.append(p2p)
     result.append((inv_fundamental_frequency, peak_to_peak))
+    # if len(inv_fundamental_frequency) > 0 or len(peak_to_peak) > 0:
+    #     result.append((inv_fundamental_frequency, peak_to_peak))
+    return result
+
+def parse_mic_data(data):
+    result = []
+    for i, val in enumerate(data):
+        data = [
+            val['jitterAbs'], 
+            val['jitterRap'], 
+            val['jitterPPQ5'], 
+            val['jitterDDP'], 
+            val['shimmerLocal'],
+            val['shimmerLocalDB'],
+            val['shimmerAPQ3'],
+            val['shimmerAPQ5'],
+            val['shimmerAPQ11'],
+            val['shimmerDDA']
+        ]
+        result.append(data)
     # if len(inv_fundamental_frequency) > 0 or len(peak_to_peak) > 0:
     #     result.append((inv_fundamental_frequency, peak_to_peak))
     return result

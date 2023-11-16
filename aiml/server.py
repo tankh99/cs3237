@@ -83,6 +83,13 @@ def get_updrs():
     updrs = predict_updrs(sound_data)
     return json.dumps(updrs.tolist()[0]) # because np array cannot be serialised as json
 
+@app.route("/get-sound-data", methods=['POST']) # uses voice data
+def get_sound_values():
+    micData = request.json['data']
+    data = parse_mic_data(micData)
+    sound_data = get_sound_data(data, True)
+    return sound_data
+
 ##
 ## Helper functions
 ##

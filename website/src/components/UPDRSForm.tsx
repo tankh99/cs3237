@@ -11,11 +11,13 @@ import { UPDRSData } from '@/redux/store/micSlice';
 export type UPDRSMetadata = {
   name: string;
   severity: number;
+  updrs: number;
 }
 
 const initialValues: UPDRSMetadata = {
   name: "",
-  severity: 1
+  severity: 1,
+  updrs: 0
 }
 
 type P = {
@@ -25,6 +27,7 @@ type P = {
 export default function UPDRSForm({uploadRecordings}: P) {
   const onSubmit = async (values: UPDRSMetadata) => {
     values.severity = parseInt(values.severity.toString());
+    values.updrs = parseInt(values.updrs.toString());
     console.log(values);
     try {
       const res = await uploadRecordings(values);
@@ -50,6 +53,9 @@ export default function UPDRSForm({uploadRecordings}: P) {
           <Form className='w-[400px] flex flex-col mx-auto mb-8'>
             Session Name:
             <Input name="name" onChange={handleChange}/>
+            <br/>
+            UPDRS:
+            <Input name="updrs" onChange={handleChange}/>
             <br/>
             Severity Level: <Select name="severity" defaultValue='1' onValueChange={(value) => {
             setFieldValue("severity", value)

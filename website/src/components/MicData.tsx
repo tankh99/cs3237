@@ -7,7 +7,7 @@ import { TableCaption, TableHeader, TableRow, TableHead, TableBody, TableCell, T
 import UPDRSForm from './UPDRSForm';
 
 export default function MicData() {
-  const [micRecordings, uploadRecordings] = useMic();
+  const [micRecordings, _, uploadRecordings] = useMic();
   console.log("mic recordings", micRecordings)
 
   return (

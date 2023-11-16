@@ -9,6 +9,7 @@ import { IothubModule } from './iothub/iothub.module';
 import { MicService } from './mic/mic.service';
 import { MicModule } from './mic/mic.module';
 import { AppGateway } from './app.gateway';
+import { ClassificationService } from './classification/classification.service';
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import { AppGateway } from './app.gateway';
     MicModule,
   ],
   controllers: [AppController],
-  providers: [AppService, SocketService, AppGateway],
+  providers: [AppService, AppGateway, ClassificationService],
 })
 export class AppModule implements OnModuleInit {
   constructor(private socketService: SocketService) {}

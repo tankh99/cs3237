@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { MicRecording } from 'src/iothub/iothub.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 export type SoundData = {
@@ -21,7 +20,6 @@ export type SoundData = {
 @Injectable()
 export class MicService {
   constructor(private prismaService: PrismaService) {}
-  
   async createSoundData(soundData: SoundData[]) {
     this.prismaService.soundData
       .createMany({

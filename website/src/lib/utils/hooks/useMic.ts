@@ -10,6 +10,7 @@ import { useAppDispatch, useAppSelector } from './useRedux';
 import { UPDRSData, addMicRecordings, addUpdrsValues, resetMicRecordings } from '@/redux/store/micSlice';
 import { UPDRSMetadata } from '@/components/UPDRSForm';
 import { DATA_THRESHOLD } from '@/lib/constants';
+import useSocket from './useSocket';
 
 export default function useMic() {
 
@@ -17,35 +18,24 @@ export default function useMic() {
   const updrsValues = useAppSelector((state) => state.mic.updrsValues);
   const dispatch = useAppDispatch();
   // const [events, setEvents] = useState<IMUActivityEventRecording[]>([]);
-  const [loading, setLoading] = useState(false)
+  // const [loading, setLoading] = useState(false)
+  const [socket, loading] = useSocket();
   useEffect(() => {
     // const fetchEvents = async () => {
     //   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/`);
     //   const data = await res.json();
     //   // setEvents(data);
     // }
+    
     const initConnection = () => {
-      if (!socket.connected) setLoading(true);
-      console.log("Triggered")
-      socket.on('connect', () => {
-        console.log("Connected")
-        setLoading(false);
-      })
-      socket.on('reconnect', () => {
-        console.log("Reconnected")
-        setLoading(false);
-      })
-      socket.on('disconnect', () => {
-        console.log("Disconnected")
-        setLoading(false);
-      })
-      
+      socket.off(MIC_CLIENT);
       socket.on(MIC_CLIENT, (data: string) => {
         const micRecordings: UPDRSData[] = JSON.parse(data);
         console.log("recordings", micRecordings)
         dispatch(addMicRecordings(micRecordings));
       })
 
+      socket.off(UPDRS_CLIENT);
       socket.on(UPDRS_CLIENT, (data: string) => {
         const updrsPreds: number[] = JSON.parse(data);
         console.log("updrs preds", updrsPreds)
@@ -63,7 +53,8 @@ export default function useMic() {
       const newSoundData = {
         ...soundData,
         sessionName: values.name, // Identify whose data it belongs to
-        severity: values.severity
+        severity: values.severity,
+        updrs: values.updrs
       }
       newUpdrsData.push(newSoundData)
     }

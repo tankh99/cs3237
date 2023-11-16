@@ -9,6 +9,7 @@ import { IMUActivityEventRecording, IMUTremorRecording, addEvents, resetEvents }
 import { useAppDispatch, useAppSelector } from './useRedux';
 import { TremorMetadata } from '@/components/TremorForm';
 import { DATA_THRESHOLD } from '@/lib/constants';
+import useSocket from './useSocket';
 
 export default function useEvents() {
 
@@ -16,29 +17,12 @@ export default function useEvents() {
   const events = useAppSelector((state) => state.events.events);
   const dispatch = useAppDispatch();
   // const [events, setEvents] = useState<IMUActivityEventRecording[]>([]);
-  const [loading, setLoading] = useState(false)
+  // const [loading, setLoading] = useState(false)
+  const [socket, loading] = useSocket();
   useEffect(() => {
-    // const fetchEvents = async () => {
-    //   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/`);
-    //   const data = await res.json();
-    //   // setEvents(data);
-    // }
+    
     const initConnection = () => {
-      if (!socket.connected) setLoading(true);
-      console.log("Triggered")
-      socket.on('connect', () => {
-        console.log("Connected")
-        setLoading(false);
-      })
-      socket.on('reconnect', () => {
-        console.log("Reconnected")
-        setLoading(false);
-      })
-      socket.on('disconnect', () => {
-        console.log("Disconnected")
-        setLoading(false);
-      })
-      
+      socket.off(EVENTS_CLIENT);
       socket.on(EVENTS_CLIENT, (data: string) => {
         const events: IMUActivityEventRecording[] = JSON.parse(data);
         dispatch(addEvents(events));

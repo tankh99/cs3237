@@ -48,6 +48,7 @@ export type UPDRSData = {
   shimmerLocalDB: number;
   name?: string;
   severity?: number;
+  updrs: number;
 };
 
 export const {addMicRecordings, resetMicRecordings, addUpdrsValues} = micSlice.actions;

@@ -12,6 +12,11 @@
 #include "iot_configs.h"
 #include "cJSON.h"
 
+#include <Adafruit_Sensor.h>
+#include <Adafruit_ADXL345_U.h>
+
+
+
 #define AZURE_SDK_CLIENT_USER_AGENT "c%2F" AZ_SDK_VERSION_STRING "(ard;esp32)"
 
 #define sizeofarray(a) (sizeof(a) / sizeof(a[0]))
@@ -32,7 +37,7 @@
 //--- Accelerometer Register Addresses
 #define Power_Register 0x2D
 #define X_Axis_Register_DATAX0 0x32 
-#define X_Axis_Register_DATAX1 0x33  
+#define X_Axis_Register_DATAX1 0x33 
 #define Y_Axis_Register_DATAY0 0x34
 #define Y_Axis_Register_DATAY1 0x35
 #define Z_Axis_Register_DATAZ0 0x36
@@ -43,6 +48,8 @@ static int X0, X1, X_out;
 static int Y0, Y1, Y_out;
 static int Z1, Z0, Z_out;
 static float Xa, Ya, Za;
+
+Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(0x53);
 
 static float x_data[200];
 static float y_data[200];
@@ -219,53 +226,31 @@ static void establishConnection()
   (void)initializeMqttClient();
 }
 
+int MAX = 256;
+int THRESHOLD = 255; // 512 seems to be the upper limit
 static void collateData() {
-  Wire.beginTransmission(ADXAddress);  // Begin transmission to the Sensor
-  //Ask the particular registers for data
-  Wire.write(X_Axis_Register_DATAX0);
-  Wire.write(X_Axis_Register_DATAX1);
-  Wire.endTransmission();           // Ends the transmission and transmits the data from the two registers
-  Wire.requestFrom(ADXAddress, 2);  // Request the transmitted two bytes from the two registers
-                                    //if (Wire.available() <= 2) { //
-  X0 = Wire.read();                 // Reads the data from the register
-  X1 = Wire.read();
-  /* Converting the raw data of the X-Axis into X-Axis Acceleration
-      - The output data is Two's complement
-      - X0 as the least significant byte
-      - X1 as the most significant byte */
-  X1 = X1 << 8;
-  X_out = X0 + X1;
-  Xa = X_out / 256.0;  // Xa = output value from -1 to +1, Gravity acceleration acting on the X-Axis
-  //}
-  // Y-Axis
-  Wire.beginTransmission(ADXAddress);
-  Wire.write(Y_Axis_Register_DATAY0);
-  Wire.write(Y_Axis_Register_DATAY1);
-  Wire.endTransmission();
-  Wire.requestFrom(ADXAddress, 2);
-  //if (Wire.available() <= 2) {
-  Y0 = Wire.read();
-  Y1 = Wire.read();
-  Y1 = Y1 << 8;
-  Y_out = Y0 + Y1;
-  Ya = Y_out / 256.0;
-  //}
-  // Z-Axis
-  Wire.beginTransmission(ADXAddress);
-  Wire.write(Z_Axis_Register_DATAZ0);
-  Wire.write(Z_Axis_Register_DATAZ1);
-  Wire.endTransmission();
-  Wire.requestFrom(ADXAddress, 2);
-  //if (Wire.available() <= 2) {
-  Z0 = Wire.read();
-  Z1 = Wire.read();
-  Z1 = Z1 << 8;
-  Z_out = Z0 + Z1;
-  Za = Z_out / 256.0;
+  sensors_event_t event;
+  accel.getEvent(&event);
+
+  float Xa = event.acceleration.x;  // Raw X-axis acceleration value
+  float Ya = event.acceleration.y;  // Raw Y-axis acceleration value
+  float Za = event.acceleration.z;  // Raw Z-axis acceleration value
+
+  // Apply scaling factor (adjust according to your sensor specifications)
+  float scalingFactor = 9.8 / 256.0;  // Example scaling factor for ADXL345, gravity divide by 256
+  Xa *= scalingFactor;
+  Ya *= scalingFactor;
+  Za *= scalingFactor;
 
   x_data[pos] = Xa;
   y_data[pos] = Ya;
   z_data[pos] = Za;
+  Serial.print(Xa);
+  Serial.print(" ");
+  Serial.print(Ya);
+  Serial.print(" ");
+  Serial.print(Za);
+  Serial.println();
   pos += 1;
 }
 
@@ -330,14 +315,23 @@ static void sendTelemetry()
 // Arduino setup and loop main functions.
 
 void setup() { 
+  Serial.begin(115200);
   establishConnection(); 
-  Wire.begin();  // Initiate the Wire library
-  delay(100);
+  // Wire.begin();  // Initiate the Wire library
+  // delay(100);
 
-  Wire.beginTransmission(ADXAddress);
-  Wire.write(Power_Register);  // Power_CTL Register
-  Wire.write(8);  // Bit D3 High for measuring enable (0000 1000)
-  Wire.endTransmission();
+  // Wire.beginTransmission(ADXAddress);
+  // Wire.write(Power_Register);  // Power_CTL Register
+  // Wire.write(8);  // Bit D3 High for measuring enable (0000 1000)
+  // Wire.endTransmission();
+
+  if(!accel.begin())
+  {
+    Serial.println("Could not find a valid ADXL345 sensor, check wiring!");
+    while(1);
+  }
+  
+  // Serial.printf("%.6f %.6f %.6f", accelerationX, accelerationY, accelerationZ);
 }
 
 void loop()

@@ -30,7 +30,6 @@ export class EventsService {
         console.error('Creation error', err);
       });
   }
-
 }
 
 export type IMURecording = {
@@ -38,7 +37,6 @@ export type IMURecording = {
   y: number;
   z: number;
 };
-
 
 export type IMUTremorActivityRecording = IMURecording & {
   sessionName?: string;

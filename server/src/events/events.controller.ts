@@ -1,5 +1,5 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { EventsService, IMUTremorActivityRecording } from './events.service';
+import { EventsService } from './events.service';
 
 @Controller('events')
 export class EventsController {
@@ -19,5 +19,4 @@ export class EventsController {
     this.eventsService.createTremorClassifications(body);
     return 'Done';
   }
-
 }

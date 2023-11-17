@@ -6,10 +6,8 @@ import { ConfigModule } from '@nestjs/config';
 import { SocketService } from './socket/socket.service';
 import { SocketModule } from './socket/socket.module';
 import { IothubModule } from './iothub/iothub.module';
-import { MicService } from './mic/mic.service';
 import { MicModule } from './mic/mic.module';
 import { AppGateway } from './app.gateway';
-import { ClassificationService } from './classification/classification.service';
 import { ClassificationModule } from './classification/classification.module';
 
 @Module({

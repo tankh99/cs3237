@@ -82,5 +82,5 @@ export default function useMic() {
   }
   
   
-  return [updrsData, updrsValues, uploadUPDRSData]
+  return [updrsData, updrsValues, uploadUPDRSData] as const
 }

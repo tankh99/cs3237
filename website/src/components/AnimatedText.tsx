@@ -4,7 +4,11 @@ import React from "react";
 import { motion } from "framer-motion";
 
 // Word wrapper
-const Wrapper = (props) => {
+type WrapperProps = {
+  [x:string]: any;
+}
+
+const Wrapper = (props: WrapperProps) => {
   // We'll do this to prevent wrapping of words using CSS
   return <span className="word-wrapper">{props.children}</span>;
 };
@@ -13,13 +17,17 @@ const Wrapper = (props) => {
 const tagMap = {
   paragraph: "p",
   heading1: "h1",
-  heading2: "h2"
+  heading2: "h2",
 };
 
+
+type AnimatedCharactersProps = {
+  [x:string]: any
+}
 // AnimatedCharacters
 // Handles the deconstruction of each word and character to setup for the
 // individual character animations
-const AnimatedCharacters = (props) => {
+const AnimatedCharacters = (props: AnimatedCharactersProps) => {
   // Framer Motion variant object, for controlling animation
   const item = {
     hidden: {
@@ -37,7 +45,7 @@ const AnimatedCharacters = (props) => {
   const splitWords = props.text.split(" ");
 
   // Create storage array
-  const words = [];
+  const words: string[][] = [];
 
   // Push each word into words array
   for (const [, item] of splitWords.entries()) {

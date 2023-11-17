@@ -23,5 +23,4 @@ export class ClassificationController {
     console.log(classification);
     res.json(classification);
   }
-
 }

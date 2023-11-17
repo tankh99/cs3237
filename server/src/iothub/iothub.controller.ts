@@ -12,8 +12,6 @@ export class IothubController {
     res.send('Sent message');
   }
 
-  // TODO: Move this to iothub controller
-
   @Post('/send')
   async sendMessage(@Body() body, @Res() res) {
     const response = await this.iothubService.sendMessage(body);

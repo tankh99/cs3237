@@ -1,4 +1,3 @@
-import { SocketService } from './../socket/socket.service';
 import { Module } from '@nestjs/common';
 import { IothubService } from './iothub.service';
 import { PrismaService } from 'src/prisma/prisma.service';

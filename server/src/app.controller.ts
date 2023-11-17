@@ -5,7 +5,6 @@ import axios from 'axios';
 @Controller('')
 export class AppController {
   constructor(private readonly appService: AppService) {}
-  
   @Get()
   async getHello(@Res() res) {
     const result = await axios.post(

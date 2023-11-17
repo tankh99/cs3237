@@ -1,4 +1,4 @@
-import { Global, Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 // import { Client } from 'azure-iothub';
 // import { Message } from 'azure-iot-common';
 import {
@@ -176,27 +176,26 @@ export class IothubService implements OnModuleInit {
 
     // This function only displays the data to the user, and does not save anything yet!
     this.imuTimerId = setTimeout(async () => {
-      this.imu = this.classificationService.normaliseImuData(this.imu);
+      // this.imu = this.classificationService.normaliseImuData(this.imu);
       this.imuClassification = this.imuClassification.concat(this.imu);
       if (this.imuClassification.length >= this.DATA_THRESHOLD) {
         this.imuClassification = this.imuClassification.slice(
           -this.DATA_THRESHOLD,
         );
+        // const normalisedData = this.classificationService.normaliseImuData(
+        //   this.imuClassification,
+        // );
+        const normalisedData = this.imuClassification;
         try {
-
           const medicationStatus =
-            await this.classificationService.classifyTremor(
-              this.imuClassification,
-            );
+            await this.classificationService.classifyTremor(normalisedData);
           console.log('medication status', medicationStatus);
           if (!medicationStatus) {
             // If medication status is off, then trigger LCD
             this.triggerLcd(); // Don't await, so that we don't slow down server
           }
           const activityType =
-            await this.classificationService.classifyActivity(
-              this.imuClassification,
-            );
+            await this.classificationService.classifyActivity(normalisedData);
           const activityClassification: IMUClassificationResult = {
             timestamp: Date.now(),
             activityType: activityType,
@@ -219,7 +218,6 @@ export class IothubService implements OnModuleInit {
           JSON.stringify(this.imu),
         );
 
-        
         this.imu = [];
 
         console.log('Actiivty diary length', this.imuClassification.length);

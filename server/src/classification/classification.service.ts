@@ -8,6 +8,14 @@ export class ClassificationService {
 
   async classifyActivity(messages): Promise<string> {
     const activityLookback = 10;
+    const ONE_SECOND = 32;
+    const stepSize = Math.floor(ONE_SECOND / 3);
+
+    const data = [];
+    // Cut up data into 1 second chunks since 1 second = 32 entries
+    for (let i = 0; i < messages.length; i += stepSize) {
+      data.push(messages[i]);
+    }
     const activityData = messages.slice(-activityLookback); // Get enough entries for lookback classification
     const activityTypeRes = await axios.post(
       `${process.env.AI_API_URL}/classify-activity`,
@@ -18,7 +26,7 @@ export class ClassificationService {
     return activityType;
   }
 
-  // 
+  //
   async classifyTremor(messages): Promise<boolean> {
     // const tremorLookback = 10;
     const tremorData = messages;
@@ -52,17 +60,6 @@ export class ClassificationService {
     let ySum = 0;
     let zSum = 0;
     // get a maximum number of entries
-    // if (data.length > thresholdLength) data = data.slice(-thresholdLength);
-    const n = data.length;
-    // const xStdev = Math.sqrt(
-    //   data.map((x) => Math.pow(x.x - xAvg, 2)).reduce((a, b) => a + b) / n,
-    // );
-    // const yStdev = Math.sqrt(
-    //   data.map((x) => Math.pow(x.y - yAvg, 2)).reduce((a, b) => a + b) / n,
-    // );
-    // const zStdev = Math.sqrt(
-    //   data.map((x) => Math.pow(x.z - zAvg, 2)).reduce((a, b) => a + b) / n,
-    // );
     for (const recording of data) {
       xSum += recording.x;
       ySum += recording.y;

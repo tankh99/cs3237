@@ -237,10 +237,10 @@ static void collateData() {
   float Za = event.acceleration.z;  // Raw Z-axis acceleration value
 
   // Apply scaling factor (adjust according to your sensor specifications)
-  float scalingFactor = 9.8 / 256.0;  // Example scaling factor for ADXL345, gravity divide by 256
-  Xa *= scalingFactor;
-  Ya *= scalingFactor;
-  Za *= scalingFactor;
+  // float scalingFactor = 9.8 / 256.0;  // Example scaling factor for ADXL345, gravity divide by 256
+  // Xa *= scalingFactor;
+  // Ya *= scalingFactor;
+  // Za *= scalingFactor;
 
   x_data[pos] = Xa;
   y_data[pos] = Ya;

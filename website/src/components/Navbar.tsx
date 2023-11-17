@@ -5,13 +5,12 @@ export default function Navbar() {
   return (
     <nav className='fixed top-0 w-full bg-white drop-shadow-md z-10'>
       <div className='flex justify-between items-center px-4 py-2'>
-        <h3 className='font-bold'>TremorGuard</h3>
+        <h3 className='font-bold'>
+          <Link href="/">
+            TremorGuard
+          </Link>
+        </h3>
         <ul className='flex gap-x-4'>
-          <li>
-            <Link href="/">
-              Home
-            </Link>
-          </li>
           <li>
             <Link href="/imu">
               IMU

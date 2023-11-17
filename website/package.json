@@ -25,6 +25,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "formik": "^2.4.5",
+    "framer-motion": "^10.16.5",
     "lucide-react": "^0.287.0",
     "next": "13.5.5",
     "next-redux-wrapper": "^8.1.0",

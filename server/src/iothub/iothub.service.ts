@@ -165,7 +165,6 @@ export class IothubService implements OnModuleInit {
               // deviceId: deviceId,
             };
             this.imu.push(imuData);
-            this.imuClassification.push(imuData);
           }
         }
       }
@@ -177,12 +176,13 @@ export class IothubService implements OnModuleInit {
 
     // This function only displays the data to the user, and does not save anything yet!
     this.imuTimerId = setTimeout(async () => {
+      this.imu = this.classificationService.normaliseImuData(this.imu);
+      this.imuClassification = this.imuClassification.concat(this.imu);
       if (this.imuClassification.length >= this.DATA_THRESHOLD) {
         this.imuClassification = this.imuClassification.slice(
           -this.DATA_THRESHOLD,
         );
         try {
-          // this.imu = this.normaliseImuData(this.imu);
 
           const medicationStatus =
             await this.classificationService.classifyTremor(
@@ -218,7 +218,10 @@ export class IothubService implements OnModuleInit {
           process.env.EVENTS_CLIENT,
           JSON.stringify(this.imu),
         );
+
+        
         this.imu = [];
+
         console.log('Actiivty diary length', this.imuClassification.length);
       }
     }, DELAY);
@@ -227,16 +230,16 @@ export class IothubService implements OnModuleInit {
       if (this.mic.length > 0) {
         try {
           const soundData = await this.getSoundData(this.mic);
-          const updrsPred = await this.classificationService.classifyMic(
-            this.mic,
-          );
-          this.socketService.socket.emit(
-            process.env.UPDRS_CLIENT,
-            JSON.stringify(updrsPred),
-          );
           this.socketService.socket.emit(
             process.env.MIC_CLIENT,
             JSON.stringify(soundData),
+          );
+          console.log(soundData);
+          const updrsPred =
+            await this.classificationService.classifyMic(soundData);
+          this.socketService.socket.emit(
+            process.env.UPDRS_CLIENT,
+            JSON.stringify(updrsPred),
           );
         } catch (ex) {
           console.error(ex);

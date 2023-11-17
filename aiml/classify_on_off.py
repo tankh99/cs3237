@@ -64,7 +64,7 @@ optimizer.load_state_dict(checkpoint['optimizer'])
 model.eval()
 
 def z_score_normalize(df):
-    return (df - df.mean())/df.std()
+    return (df)/df.std()
 
 SAMPLE_RATE = 31.25 # samples per second
 DURATION = 60 # in seconds
@@ -72,8 +72,6 @@ GROUP_SIZE = int(DURATION * SAMPLE_RATE)
 print(GROUP_SIZE)
 
 def classify(input):
-    range_rand = 1.0
-    input = [[random.uniform(-range_rand, range_rand) for i in range(3)] for j in range(GROUP_SIZE)]
     input = z_score_normalize(pd.DataFrame(input)).values.tolist()
     input = np.reshape(input, (1, 3, GROUP_SIZE, 1))
     input = torch.FloatTensor(input)

@@ -31,50 +31,6 @@ export class EventsService {
       });
   }
 
-  // Normalise within the 1875 entries
-  // Normalises only only for activity recrodings, doesn't have stdev
-  normaliseImuData(data: IMUTremorActivityRecording[]) {
-    // const thresholdLength = 1875;
-    let xSum = 0;
-    let ySum = 0;
-    let zSum = 0;
-    // get a maximum number of entries
-    // if (data.length > thresholdLength) data = data.slice(-thresholdLength);
-    const n = data.length;
-    // const xStdev = Math.sqrt(
-    //   data.map((x) => Math.pow(x.x - xAvg, 2)).reduce((a, b) => a + b) / n,
-    // );
-    // const yStdev = Math.sqrt(
-    //   data.map((x) => Math.pow(x.y - yAvg, 2)).reduce((a, b) => a + b) / n,
-    // );
-    // const zStdev = Math.sqrt(
-    //   data.map((x) => Math.pow(x.z - zAvg, 2)).reduce((a, b) => a + b) / n,
-    // );
-    for (const recording of data) {
-      xSum += recording.x;
-      ySum += recording.y;
-      zSum += recording.z;
-    }
-    const xAvg = xSum / data.length;
-    const yAvg = ySum / data.length;
-    const zAvg = zSum / data.length;
-    // console.log("xstedv", xStdev)
-    // console.log("ystedv", yStdev)
-    // console.log("zstedv", zStdev)
-    for (const recording of data) {
-      recording.x -= xAvg;
-      // recording.x /= xStdev;
-
-      recording.y -= yAvg;
-      // recording.y /= yStdev;
-
-      recording.z -= zAvg;
-      // recording.z /= zStdev;
-    }
-
-    return data;
-  }
-  
 }
 
 export type IMURecording = {

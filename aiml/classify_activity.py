@@ -28,9 +28,8 @@ class LSTM(nn.Module):
         return x
 
 model = LSTM()
-optimizer = optim.Adam(model.parameters())
 
-file_path = './models/activity-classification.pth'
+file_path = './models/activity-classification-new.pth'
 
 model.load_state_dict(torch.load(file_path))
 model.eval()
@@ -42,6 +41,7 @@ range_rand = 5.0
 
 # Expects an input of 10-15 pieces of tri-axial acceleration values over 10-15 seconds
 def classify(input):
+    input = z_score_normalize(input)
     input = np.tile(input, (32,1, 1)) # Creates a batch of 32
     input = torch.FloatTensor(input)
     output = model(input)

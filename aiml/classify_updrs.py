@@ -17,8 +17,7 @@ def z_score_normalize(df):
 range_rand = 5.0
 
 def classify(input):
-    # input = np.tile(input, (32,1, 1)) # Creates a batch of 32
-    print(input)
+    # print(input)
     input = torch.FloatTensor(input)
     output = model.predict(input)
     return output

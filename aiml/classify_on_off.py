@@ -54,17 +54,15 @@ model = Grouped2DCNN()
 lr = 0.001
 betas = (0.9, 0.999)
 model = Grouped2DCNN()
-optimizer = optim.NAdam(model.parameters(), lr=lr, betas=betas)
 
 file_path = './models/BESTfinal_G180_window_noval_3conv_6_8DO_2stride_2dcnn_imu_onoff.pth'
 
 checkpoint = torch.load(file_path)
 model.load_state_dict(checkpoint['state_dict'])
-optimizer.load_state_dict(checkpoint['optimizer'])
 model.eval()
 
 def z_score_normalize(df):
-    return (df)/df.std()
+    return (df-df.mean())/df.std()
 
 SAMPLE_RATE = 31.25 # samples per second
 DURATION = 60 # in seconds
@@ -81,7 +79,7 @@ def classify(input):
     print(output.shape)
     print(torch.max(output.data, 1)[1])
     prediction = int(np.argmax(np.bincount(torch.max(output.data, 1)[1]))) 
-    return True if prediction == 0 else False
+    return False if prediction == 1 else True
     # input = [[random.uniform(-range_rand, range_rand) for i in range(3)] for j in range(15)]
     # input = z_score_normalize(pd.DataFrame(input)).values.tolist()
     # input = [input] * 32

@@ -1,26 +1,26 @@
-### Archived code
-const connectionString = process.env.CONNECTION_STRING;
-    const deviceId = process.env.DEVICE_ID;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const registry = Registry.fromConnectionString(connectionString);
-    const client = Client.fromConnectionString(connectionString);
-    client.open((err) => {
-      if (err) {
-        console.error('Could not connect: ' + err.message);
-      } else {
-        console.log('Client connected to IoT Hub.');
+# TremorGuard
 
-        client.on('message', (message) => {
-          console.log('Received message from device: ' + message.getData());
-        });
-      }
-    });
+### Client
+```
+npm run dev
+```
 
-    client.send(deviceId, 'Hello from the server', (err) => {
-      if (err) {
-        console.error('Error sending message:', err.toString());
-      } else {
-        console.log('Message sent successfully.');
-      }
-    });
-    res.json(this.appService.getHello());
+### Starting NestJS Server
+```
+npm run start:dev
+```
+
+### Starting AI Server
+```
+python3 server.py
+```
+
+### Steps
+#### Collect IoT data
+Simply start the main server. The IoT devices should start sending data once connected to Wi-FI
+
+#### View classifications
+Classifications are only shown after 60 seconds due to the requirement of having at least 60 seconds of past data before making classifications
+
+#### Submit labelled data
+Data collected must be for the same activity type. 

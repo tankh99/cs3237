@@ -1,7 +1,11 @@
-from flask import Flask
-import psycopg2 
+import random
+import json
+from flask import Flask, g, request, jsonify
+import psycopg2
 from configparser import ConfigParser
-
+from flask_cors import CORS
+from predictors import predict_tremor, predict_activity, predict_updrs
+from mic import get_sound_data
 
 def config(filename='database.ini', section='postgresql'):
     # create a parser
@@ -20,67 +24,120 @@ def config(filename='database.ini', section='postgresql'):
     print(db)
     return db
 
-# def connect():
-    """ Connect to the PostgreSQL database server """
-    conn = None
-    try:
-        # read connection parameters
-        params = config()
+def connect():
+    if 'db' not in g: 
+        """ Connect to the PostgreSQL database server """
+        conn = None
+        try:
+            # read connection parameters
+            params = config()
 
-        # connect to the PostgreSQL server
-        print('Connecting to the PostgreSQL database...')
-        conn = psycopg2.connect(**params)
-		
-        # create a cursor
-        cur = conn.cursor()
-        
-	# execute a statement
-        print('PostgreSQL database version:')
-        cur.execute('SELECT version()')
+            # connect to the PostgreSQL server
+            print('Connecting to the PostgreSQL database...')
+            g.db = psycopg2.connect(**params)
 
-        # display the PostgreSQL database server version
-        db_version = cur.fetchone()
-        print(db_version)
-       
-	# close the communication with the PostgreSQL
-        cur.close()
-    except (Exception, psycopg2.DatabaseError) as error:
-        print(error)
-    finally:
-        if conn is not None:
-            conn.close()
-            print('Database connection closed.')
-
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+    return g.db
+    
 
 app = Flask(__name__)
 
+@app.before_request
+def before_request():
+   g.db = connect()
+
+@app.teardown_request
+def teardown_request(exception):
+    g.db.close()
+
 @app.route("/")
 def index():
-    conn = psycopg2.connect(**config())
+    conn = g.db
     cur = conn.cursor()
-    data = cur.execute('SELECT * FROM public.ActivityRecording')
-    print(data.fetchall())
-    cur.close()
-    conn.close()
+    cur.execute('SELECT * FROM public."ActivityRecording"')
+    data = cur.fetchall()
+    
+    return data
 
-    return "Main only "
-
-@app.route("/classify-tremor") # uses imu data to classify on/off data
+@app.route("/classify-tremor", methods=['POST']) # uses imu data to classify on/off data
 def classify_tremor():
-    return True
+    imuData = request.json['data']
+    parsed_data = parse_imu_data(imuData)
+    result = predict_tremor(parsed_data)
+    return json.dumps(result) # required becuase boolean datatype
 
-@app.route("/classify-activity")
+@app.route("/classify-activity", methods=['POST'])
 def classify_activity():
-    return "relax"
+    imuData = request.json['data']
+    parsed_data = parse_imu_data(imuData)
+    result = predict_activity(parsed_data)
+    return result
+    # return json.dumps("HELLO")
 
-@app.route("/get-updrs") # uses voice and imu data
+@app.route("/get-updrs", methods=['POST']) # uses voice data
 def get_updrs():
-    return 0
+    micData = request.json['data']
+    micData = parse_mic_data(micData)
+    # sound_data = get_sound_data(data)
+    updrs = predict_updrs(micData)
+    return json.dumps(updrs.tolist()[0]) # because np array cannot be serialised as json
 
+@app.route("/get-sound-data", methods=['POST']) # uses voice data
+def get_sound_values():
+    micData = request.json['data']
+    data = parse_basic_mic_data(micData)
+    sound_data = get_sound_data(data, True)
+    return sound_data
 
-conn = psycopg2.connect(**config())
-cur = conn.cursor()
-data = cur.execute('SELECT * FROM ActivityRecording')
-print(data.fetchall())
-cur.close()
-conn.close()
+##
+## Helper functions
+##
+def parse_imu_data(data):
+    parsed = []
+    for val in data:
+        row = [val['x'], val['y'], val['z']]
+        parsed.append(row)
+    return parsed
+
+def parse_basic_mic_data(data):
+    THRESHOLD = 20 # Split data into chunks of arrays
+    result = []
+    inv_fundamental_frequency = []
+    peak_to_peak = []
+    for i, val in enumerate(data):
+        ff = val['ff']
+        ff = float(ff)
+        invff = 1/ff
+        inv_fundamental_frequency.append(invff)
+        
+        p2p = val['p2p']
+        p2p = float(p2p)
+        peak_to_peak.append(p2p)
+    result.append((inv_fundamental_frequency, peak_to_peak))
+    # if len(inv_fundamental_frequency) > 0 or len(peak_to_peak) > 0:
+    #     result.append((inv_fundamental_frequency, peak_to_peak))
+    return result
+
+def parse_mic_data(data):
+    result = []
+    for i, val in enumerate(data):
+        data = [
+            val['jitterAbs'], 
+            val['jitterRap'], 
+            val['jitterPPQ5'], 
+            val['jitterDDP'], 
+            val['shimmerLocal'],
+            val['shimmerLocalDB'],
+            val['shimmerAPQ3'],
+            val['shimmerAPQ5'],
+            val['shimmerAPQ11'],
+            val['shimmerDDA']
+        ]
+        result.append(data)
+    # if len(inv_fundamental_frequency) > 0 or len(peak_to_peak) > 0:
+    #     result.append((inv_fundamental_frequency, peak_to_peak))
+    return result
+
+CORS(app)
+app.run(host="localhost", port=8080, debug=True)

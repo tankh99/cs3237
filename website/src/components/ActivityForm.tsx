@@ -2,7 +2,9 @@ import { Form, Formik } from 'formik'
 import React from 'react'
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import useEvents, { IMUActivityEventRecording } from '@/lib/utils/hooks/useEvents';
+import axios from 'axios';
+import useEvents from '@/lib/utils/hooks/useEvents';
+import { IMUActivityEventRecording } from '@/redux/store/eventSlice';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 export type ActivityMetadata = {
@@ -21,8 +23,16 @@ type P = {
 }
 export default function ActivityForm({uploadEvents}: P) {
   const onSubmit = async (values: any) => {
-    console.log(values);
-    uploadEvents(values);
+    await uploadEvents(values);
+    // try {
+    //   // const tremorDetected = await axios.get(`${process.env.NEXT_PUBLIC_AI_API_URL}/classify-tremor`)
+    //   // const activity = await  axios.get(`${process.env.NEXT_PUBLIC_AI_API_URL}/classify-activity`);
+    //   // if (tremorDetected.data) {
+    //   //   alert(`Tremor detected while doing activity type: ${activity.data}`);
+    //   // }
+    // } catch (ex) {
+    //   console.error(ex);
+    // }
   }
   
   return (
@@ -30,9 +40,9 @@ export default function ActivityForm({uploadEvents}: P) {
       onSubmit={onSubmit}
       initialValues={initialValues}>
         {({handleChange, handleBlur, setFieldValue, values}) => (
-          <Form className='w-[400px]'>
-            <Input name="name" placeholder="Name" onChange={handleChange}/>
-            <Select name="activityType" defaultValue='relax' onValueChange={(value) => {
+          <Form className='flex flex-col mx-auto'>
+            Name: <Input name="name" placeholder="Name" onChange={handleChange}/>
+            Activity Type: <Select name="activityType" defaultValue='relax' onValueChange={(value) => {
             setFieldValue("activityType", value)
             }}>
               <SelectTrigger className="w-full">
@@ -45,6 +55,7 @@ export default function ActivityForm({uploadEvents}: P) {
                 <SelectItem value="moving">Moving (Walking downstairs/upstairs fast/slow)</SelectItem>
               </SelectContent>
             </Select>
+            <br/>
             <Button type="submit">Submit</Button>
           </Form>  
         )}

@@ -6,11 +6,21 @@ import { ConfigModule } from '@nestjs/config';
 import { SocketService } from './socket/socket.service';
 import { SocketModule } from './socket/socket.module';
 import { IothubModule } from './iothub/iothub.module';
+import { MicModule } from './mic/mic.module';
+import { AppGateway } from './app.gateway';
+import { ClassificationModule } from './classification/classification.module';
 
 @Module({
-  imports: [ConfigModule.forRoot(), SocketModule, IothubModule, EventsModule],
+  imports: [
+    ConfigModule.forRoot(),
+    SocketModule,
+    IothubModule,
+    EventsModule,
+    MicModule,
+    ClassificationModule,
+  ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, AppGateway],
 })
 export class AppModule implements OnModuleInit {
   constructor(private socketService: SocketService) {}

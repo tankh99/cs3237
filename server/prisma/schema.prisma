@@ -17,15 +17,33 @@ model ActivityRecording {
   x Decimal
   y Decimal
   z Decimal
-  key String?
-  device_id String
-  user_id Int? 
-  user User? @relation(fields: [user_id], references: [id])
-  activity_type String?
+  sessionName String?
+  activityType String?
 }
 
-model User {
-  id Int @id @default(autoincrement())
-  name String
-  recordings ActivityRecording[]
+model TremorClassification {
+  id        Int      @id @default(autoincrement())
+  timestamp BigInt
+  x Decimal
+  y Decimal
+  z Decimal
+  sessionName String?
+  medicationStatus Boolean
+}
+
+model SoundData {
+  id        Int      @id @default(autoincrement())
+  jitterAbs Decimal
+  jitterRap Decimal
+  jitterPPQ5 Decimal
+  jitterDDP Decimal
+  shimmerLocal Decimal
+  shimmerLocalDB Decimal
+  shimmerAPQ3 Decimal
+  shimmerAPQ5 Decimal
+  shimmerAPQ11 Decimal
+  shimmerDDA Decimal
+  updrs Decimal?
+  severity Int
+  sessionName String?
 }

@@ -2,19 +2,21 @@
 
 import React, { useEffect, useState } from 'react'
 import { Button } from './ui/button'
-import useEvents, { IMUActivityEventRecording } from '@/lib/utils/hooks/useEvents';
+import useEvents from '@/lib/utils/hooks/useEvents';
+import { IMUActivityEventRecording } from '@/redux/store/eventSlice';
 import { socket } from '@/lib/utils/socket';
 import { EVENTS_SERVER } from '@/lib/sockets';
 import { Input } from './ui/input';
 import ActivityForm from './ActivityForm';
+import { Table, TableHead, TableHeader, TableCaption, TableRow, TableBody, TableCell } from './ui/table';
 
 export default function IOTEvents() {
-  const [events, uploadEvents, loading] = useEvents();
+  const [events, uploadEvents, _, loading] = useEvents();
   const [activityName, setActivityName] = useState("");
 
-  useEffect(() => {
-    console.log(events);
-  }, [events])
+  // useEffect(() => {
+  //   console.log(events);
+  // }, [events])
   
   const sendData = async () => {
     try {
@@ -37,8 +39,8 @@ export default function IOTEvents() {
       x: Math.random(),
       y: Math.random(),
       z: Math.random(),
-      activity_type: "TEST",
-      device_id: "TEST DEVICE ID",
+      activityType: "TEST",
+      sessionName: "TEST DEVICE ID",
       timestamp: Date.now()
     }
     socket.emit(EVENTS_SERVER, event);
@@ -49,14 +51,34 @@ export default function IOTEvents() {
     <div>
       {/* <Button onClick={sendData}>Send message</Button> */}
       {/* <Button onClick={ping}>Ping</Button> */}
-      <Button onClick={addEvent}>Add random event</Button>
+      {/* <Button onClick={addEvent}>Add random event</Button> */}
       <ActivityForm uploadEvents={uploadEvents} />
-      {events && events.map((event, index) => {
-        const {x, y, z} = event
-        return (
-          <div key={index}>X: {x} Y: {y} Z: {z}</div>
-        )
-      })}
+      <br/>
+      <Table >
+        <TableCaption>Received IMU data</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Timestamp</TableHead>
+            <TableHead>X</TableHead>
+            <TableHead>Y</TableHead>
+            <TableHead>Z</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody className='h-[400px] overflow-scroll'>
+          
+          {events && events.map((event, index) => {
+            const {x, y, z} = event
+            return (
+              <TableRow key={index}>
+                <TableCell>{new Date(event.timestamp).toTimeString()}</TableCell>
+                <TableCell>{x}</TableCell>
+                <TableCell>{y}</TableCell>
+                <TableCell>{z}</TableCell>
+              </TableRow>
+              )
+            })}
+        </TableBody>
+      </Table>
 
     </div>
   )

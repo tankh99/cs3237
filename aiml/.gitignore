@@ -1,1 +1,3 @@
 database.ini
+*.pyc
+jervis code.py
